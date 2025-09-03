@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
-import QRCode from 'qrcode.react';
 
 // --- Firebase Configuration ---
 const firebaseConfig = {
@@ -19,6 +18,26 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+// This is a wrapper for the qrcode.js library.
+const QRCodeComponent = ({ value, size }) => {
+    const ref = useRef(null);
+    useEffect(() => {
+        if (ref.current && window.QRCode) {
+            ref.current.innerHTML = '';
+            new window.QRCode(ref.current, {
+                text: value,
+                width: size,
+                height: size,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: window.QRCode.CorrectLevel.H
+            });
+        }
+    }, [value, size]);
+    return <div ref={ref}></div>;
+};
+
 
 // --- SVG Icon Components ---
 const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
@@ -251,7 +270,7 @@ export default function AgentDashboard() {
                             </div>
                              <div className="w-1/4 flex-shrink-0 flex items-center justify-center">
                                 <div className="p-2 bg-white border rounded-md shadow-sm">
-                                    <QRCode value="https://portal.piyamtravel.com" size={128} />
+                                    <QRCodeComponent value="https://portal.piyamtravel.com" size={128} />
                                 </div>
                             </div>
                         </div>
@@ -267,3 +286,4 @@ export default function AgentDashboard() {
         </>
     );
 }
+
