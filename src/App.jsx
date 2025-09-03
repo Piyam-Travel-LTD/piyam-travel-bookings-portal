@@ -1,43 +1,39 @@
 import React, { useState } from 'react';
-import AgentDashboard from './components/AgentDashboard';
 import AgentLogin from './components/AgentLogin';
+import AgentDashboard from './components/AgentDashboard';
 import ClientPortal from './components/ClientPortal';
 
-// This component will act as a router to show the correct page.
-// In a real app, this logic would be more complex.
+// This is a simple router to switch between views.
 export default function App() {
-    // For now, we can toggle between views using a simple state
-    // We will replace this with real routing later.
-    const [currentView, setCurrentView] = useState('agent-login'); // 'agent-login', 'agent-dashboard', 'client-portal'
+  const [view, setView] = useState('agent-login'); // 'agent-login', 'agent-dashboard', 'client-portal'
+  
+  // This is a simulation of a successful agent login
+  const handleAgentLogin = () => {
+    setView('agent-dashboard');
+  };
 
-    const renderView = () => {
-        switch (currentView) {
-            case 'agent-dashboard':
-                return <AgentDashboard />;
-            case 'client-portal':
-                return <ClientPortal />;
-            case 'agent-login':
-            default:
-                return <AgentLogin />;
-        }
-    };
+  const renderView = () => {
+    switch (view) {
+      case 'agent-dashboard':
+        return <AgentDashboard />;
+      case 'client-portal':
+        return <ClientPortal />;
+      case 'agent-login':
+      default:
+        return <AgentLogin onLogin={handleAgentLogin} />;
+    }
+  };
 
-    // A simple way to navigate for this prototype
-    // In a real app, you would use a library like React Router.
-    const Navigation = () => (
-        <nav className="bg-gray-800 text-white p-2 text-center text-xs">
-            <p>Prototype Navigation (for testing only):</p>
-            <button className="underline p-1 mx-2" onClick={() => setCurrentView('agent-login')}>Agent Login</button>
-            <button className="underline p-1 mx-2" onClick={() => setCurrentView('agent-dashboard')}>Agent Dashboard</button>
-            <button className="underline p-1 mx-2" onClick={() => setCurrentView('client-portal')}>Client Portal</button>
-        </nav>
-    );
-
-
-    return (
-        <>
-            <Navigation />
-            {renderView()}
-        </>
-    );
+  return (
+    <div>
+      {/* This temporary navigation helps switch views during development */}
+      <nav className="bg-gray-800 text-white p-2 text-xs text-center no-print">
+        <span className="font-bold">DEV-NAV:</span>
+        <button onClick={() => setView('agent-login')} className="mx-2 underline">Agent Login</button>
+        <button onClick={() => setView('agent-dashboard')} className="mx-2 underline">Agent Dashboard</button>
+        <button onClick={() => setView('client-portal')} className="mx-2 underline">Client Portal</button>
+      </nav>
+      {renderView()}
+    </div>
+  );
 }
