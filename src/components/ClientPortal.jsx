@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { db } from '../firebase';
-import { collection, query, where, getDocs } from "firebase/firestore";
+// We no longer need to import firebase here directly
 import { piyamTravelLogoBase64 } from '../data';
 
-// --- Components (SVGs remain the same) ---
-const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo"/> );
+// --- (All SVG and other components remain the same) ---
 const UserIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> );
 const FingerprintIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 10a2 2 0 0 0-2 2c0 1.02.5 2.51 2 4 .5-1.5.5-2.5 2-4a2 2 0 0 0-2-2Z"/><path d="M12 2a10 10 0 0 0-10 10c0 4.4 3.6 10 10 10s10-5.6 10-10A10 10 0 0 0 12 2Z"/></svg> );
 const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
 const DownloadIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> );
 const InfoIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> );
+const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo"/> );
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
@@ -24,23 +23,23 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
         setIsLoading(true);
 
         try {
-            const customersRef = collection(db, "customers");
-            const q = query(customersRef, 
-                where("referenceNumber", "==", refNumber.trim().toUpperCase()), 
-                where("lastName", "==", lastName.trim())
-            );
+            const response = await fetch('/api/lookup-customer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ referenceNumber: refNumber, lastName }),
+            });
 
-            const querySnapshot = await getDocs(q);
+            const data = await response.json();
 
-            if (querySnapshot.empty) {
-                setError('Invalid reference number or last name. Please try again.');
-            } else {
-                const customerData = querySnapshot.docs[0].data();
-                onLogin({ id: querySnapshot.docs[0].id, ...customerData });
+            if (!response.ok) {
+                throw new Error(data.error || 'Customer not found.');
             }
+            
+            onLogin(data);
+
         } catch (err) {
-            console.error("Error logging in: ", err);
-            setError("An error occurred. Please try again later.");
+            console.error("Login error:", err);
+            setError(err.message || 'An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -76,6 +75,7 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
 };
 
 const ClientDashboard = ({ customer, onLogout }) => {
+    // ... (This component remains the same)
     const visibleCategories = fileCategories.filter(category => 
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
