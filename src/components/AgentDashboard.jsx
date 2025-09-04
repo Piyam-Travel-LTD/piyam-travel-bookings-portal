@@ -1,23 +1,23 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
-import { piyamTravelLogoBase64, clientPortalUrl } from '../data'; // Import centralized data
-import QRCode from 'qrcode.react'; // Import the new QR Code library
+import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
+import QRCode from 'qrcode.react';
 
-// --- (SVG Icons remain the same) ---
+// ... (SVG Icons remain the same) ...
 const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
 const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
 const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
 const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
 const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
 const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
-const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
-const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
+const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
+const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
 export default function AgentDashboard({ onLogout }) {
-    // ... (All state and functions remain the same)
+    // ... (state setup remains the same)
     const [customers, setCustomers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -29,8 +29,10 @@ export default function AgentDashboard({ onLogout }) {
     const [copySuccess, setCopySuccess] = useState('');
     const fileInputRef = useRef(null);
     const [currentUploadCategory, setCurrentUploadCategory] = useState('');
-    
-    useEffect(() => {
+    const [uploadingStatus, setUploadingStatus] = useState({});
+
+    // ... (useEffect and other functions remain the same)
+     useEffect(() => {
         const fetchCustomers = async () => {
             setIsLoading(true);
             try {
@@ -88,23 +90,62 @@ export default function AgentDashboard({ onLogout }) {
         }
     };
     
+    // --- UPDATED FILE UPLOAD LOGIC ---
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file || !selectedCustomer) return;
-        const newDocument = { id: Date.now(), category: currentUploadCategory, name: file.name };
-        const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
-        const customerDocRef = doc(db, "customers", selectedCustomer.id);
+        
+        setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Uploading...'}));
+
         try {
+            // Step 1: Ask our secure backend for a one-time upload URL
+            const urlResponse = await fetch('/api/generate-upload-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: file.name, customerId: selectedCustomer.id }),
+            });
+            
+            if (!urlResponse.ok) throw new Error('Could not get upload URL.');
+            const { uploadUrl, publicUrl } = await urlResponse.json();
+
+            // Step 2: Upload the file directly to Cloudflare R2 using the secure URL
+            const uploadResponse = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type },
+            });
+
+            if (!uploadResponse.ok) throw new Error('File upload failed.');
+
+            // Step 3: Save the file's metadata and PUBLIC URL to Firestore
+            const newDocument = {
+                id: Date.now(),
+                category: currentUploadCategory,
+                name: file.name,
+                url: publicUrl, // This is the permanent, public link to the file
+            };
+
+            const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
+            const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments });
+            
+            // Update local state to show the new file immediately
             const updatedCustomer = { ...selectedCustomer, documents: updatedDocuments };
             const updatedCustomers = customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c);
             setCustomers(updatedCustomers);
             setSelectedCustomer(updatedCustomer);
-        } catch(error) { console.error("Error updating document: ", error); }
+             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
+
+        } catch (error) {
+            console.error("File upload process failed:", error);
+            setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Upload Failed!'}));
+        }
+
         event.target.value = null;
     };
     
-    const handleDeleteFile = async (fileId) => {
+     const handleDeleteFile = async (fileId) => {
+        // Note: This only deletes the Firestore record. Deleting from R2 requires another backend function.
          const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileId);
          const customerDocRef = doc(db, "customers", selectedCustomer.id);
          try {
@@ -116,6 +157,7 @@ export default function AgentDashboard({ onLogout }) {
          } catch(error) { console.error("Error updating document: ", error); }
     }
 
+
     const handleUploadButtonClick = (category) => {
         setCurrentUploadCategory(category);
         fileInputRef.current.click();
@@ -126,9 +168,9 @@ export default function AgentDashboard({ onLogout }) {
         (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    const renderDashboard = () => (
-        // ... (renderDashboard JSX remains the same)
-         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+    // --- (renderDashboard and renderCustomerFolder remain mostly the same, with a small change for upload status) ---
+     const renderDashboard = () => (
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
                 <div className="flex gap-4">
@@ -155,7 +197,6 @@ export default function AgentDashboard({ onLogout }) {
     );
     
     const renderCustomerFolder = () => {
-        // ... (renderCustomerFolder JSX remains the same)
         const customerDocs = selectedCustomer.documents || [];
         return (
             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
@@ -181,7 +222,12 @@ export default function AgentDashboard({ onLogout }) {
                                         ))
                                     ) : ( <p className="text-sm text-gray-400 italic">No documents uploaded yet.</p> )}
                                 </div>
-                                <button onClick={() => handleUploadButtonClick(category.name)} className="w-full mt-4 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm">Upload File</button>
+                                 <button
+                                    onClick={() => handleUploadButtonClick(category.name)}
+                                    disabled={!!uploadingStatus[category.name]}
+                                    className="w-full mt-4 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm disabled:bg-gray-200 disabled:cursor-not-allowed">
+                                    {uploadingStatus[category.name] || 'Upload File'}
+                                </button>
                             </div>
                         )
                     })}
@@ -189,8 +235,7 @@ export default function AgentDashboard({ onLogout }) {
             </div>
         );
     }
-
-    return (
+     return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
             {isCreateModalOpen && (
