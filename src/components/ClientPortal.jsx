@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { db } from '../firebase'; // Now we need the db again for the direct lookup
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { piyamTravelLogoBase64 } from '../data';
 
 // --- (All SVG and other components remain the same) ---
@@ -21,24 +23,27 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
         setError('');
         setIsLoading(true);
 
+        // We are now querying Firestore directly from the client.
+        // The new security rules make this safe.
         try {
-            const response = await fetch('/api/lookup-customer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ referenceNumber: refNumber, lastName }),
-            });
+            const fullRefNumber = `PT-${refNumber.trim().toUpperCase()}`;
+            const customersRef = collection(db, "customers");
+            const q = query(customersRef, 
+                where("referenceNumber", "==", fullRefNumber), 
+                where("lastName", "==", lastName.trim())
+            );
 
-            const data = await response.json();
+            const querySnapshot = await getDocs(q);
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Customer not found.');
+            if (querySnapshot.empty) {
+                setError('Invalid reference number or last name. Please try again.');
+            } else {
+                const customerData = querySnapshot.docs[0].data();
+                onLogin({ id: querySnapshot.docs[0].id, ...customerData });
             }
-            
-            onLogin(data);
-
         } catch (err) {
             console.error("Login error:", err);
-            setError(err.message || 'An error occurred. Please try again.');
+            setError("An error occurred. Please check your connection and try again.");
         } finally {
             setIsLoading(false);
         }
@@ -60,7 +65,7 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
                             value={refNumber}
                             onChange={(e) => setRefNumber(e.target.value.toUpperCase())}
                             placeholder="6P7GC2"
-                            className="flex-1 block w-full rounded-none rounded-r-lg border-gray-300 focus:border-red-500 focus:ring-red-500 sm:text-sm"
+                            className="flex-1 block w-full rounded-none rounded-r-lg p-2 border border-gray-300 focus:border-red-500 focus:ring-red-500 sm:text-sm"
                             required
                         />
                     </div>
@@ -82,6 +87,7 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
 };
 
 const ClientDashboard = ({ customer, onLogout }) => {
+    // ... (This component remains the same)
     const visibleCategories = fileCategories.filter(category => 
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
