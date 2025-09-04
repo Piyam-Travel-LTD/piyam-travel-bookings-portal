@@ -1,30 +1,20 @@
-// This is our secure "Digital Bouncer" - a Vercel Serverless Function.
-// It runs on the server, not in the user's browser.
-
-// We need to import the Firebase Admin SDK to give this function special access
 import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
 
-// Initialize the Firebase Admin App
-// Vercel Environment Variables will securely provide the credentials
-try {
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      })
-    });
-  }
-} catch (error) {
-  console.error('Firebase admin initialization error', error.stack);
+// This securely initializes the Firebase Admin SDK using the credentials
+// you stored in Vercel's Environment Variables.
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+  });
 }
 
-const db = getFirestore();
+const db = admin.firestore();
 
 export default async function handler(req, res) {
-  // We only allow POST requests for security
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -38,21 +28,21 @@ export default async function handler(req, res) {
   try {
     const customersRef = db.collection('customers');
     const q = customersRef
-      .where('referenceNumber', '==', referenceNumber.trim().toUpperCase())
+      .where('referenceNumber', '==', `PT-${referenceNumber.trim().toUpperCase()}`)
       .where('lastName', '==', lastName.trim());
       
     const querySnapshot = await q.get();
 
     if (querySnapshot.empty) {
-      return res.status(404).json({ error: 'Customer not found.' });
+      return res.status(404).json({ error: 'Invalid reference number or last name. Please try again.' });
     }
 
-    // Return the data for the single customer that was found
     const customerData = querySnapshot.docs[0].data();
+    // Important: We don't send the customer's ID, only the data they need to see.
     return res.status(200).json(customerData);
 
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('API Lookup Error:', error);
     return res.status(500).json({ error: 'An internal server error occurred.' });
   }
 }
