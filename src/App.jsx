@@ -36,10 +36,10 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Route for the Client Portal - This is now the default */}
+        {/* Route for the Client Portal - This is the default route for "/" */}
         <Route path="/" element={<ClientPortal />} />
         
-        {/* Route for the Agent Side */}
+        {/* Route for the Agent Side, protected by authentication */}
         <Route 
           path="/agent" 
           element={
@@ -47,7 +47,7 @@ export default function App() {
           } 
         />
         
-        {/* Redirect any other unknown path back to the client portal */}
+        {/* Redirect any other unknown path back to the client portal login */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
