@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from './firebase'; 
 import AgentLogin from './components/AgentLogin';
@@ -11,12 +11,10 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This listener checks the agent's sign-in state and sets the user object.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsLoading(false);
     });
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
@@ -24,7 +22,6 @@ export default function App() {
     signOut(auth).catch((error) => console.error("Sign out error:", error));
   };
 
-  // Display a loading message while Firebase authentication is being checked.
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -34,22 +31,20 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        {/* Route for the Client Portal - This is the default route for "/" */}
-        <Route path="/" element={<ClientPortal />} />
-        
-        {/* Route for the Agent Side, protected by authentication */}
-        <Route 
-          path="/agent" 
-          element={
-            user ? <AgentDashboard onLogout={handleLogout} /> : <AgentLogin />
-          } 
-        />
-        
-        {/* Redirect any other unknown path back to the client portal login */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <Routes>
+      {/* Route for the Client Portal - This is the default route */}
+      <Route path="/" element={<ClientPortal />} />
+      
+      {/* Route for the Agent Side */}
+      <Route 
+        path="/agent" 
+        element={
+          user ? <AgentDashboard onLogout={handleLogout} /> : <AgentLogin />
+        } 
+      />
+      
+      {/* Redirect any other unknown path back to the client portal */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
