@@ -1,7 +1,7 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// Create an S3 client configured for Cloudflare R2
+// Create an S3 client configured for Cloudflare R2 with your Account ID
 const s3 = new S3Client({
   region: "auto",
   endpoint: `https://a09d97a55041952a5759c9577d9b873b.r2.cloudflarestorage.com`,
