@@ -134,4 +134,116 @@ export default function AgentDashboard({ onLogout }) {
         `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-    // ... (
+    // ... (rest of render functions remain largely the same, but check voucher modal for logo change)
+    const renderDashboard = () => (
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
+                <div className="flex gap-4">
+                    <button onClick={() => setIsCreateModalOpen(true)} className="flex items-center justify-center bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><PlusIcon />Create New Folder</button>
+                    <button onClick={onLogout} className="flex items-center justify-center bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-500 transition-colors"><LogOutIcon/>Sign Out</button>
+                </div>
+            </div>
+            <div className="relative mb-6">
+                <input type="text" placeholder="Search by name or reference number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-red-800 focus:border-red-800" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><SearchIcon /></div>
+            </div>
+            {isLoading ? <p className="text-center text-gray-500">Loading customers...</p> : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {filteredCustomers.map(customer => (
+                    <div key={customer.id} onClick={() => setSelectedCustomer(customer)} className="bg-gray-50 aspect-square p-4 rounded-lg border border-gray-200 hover:border-red-800 hover:bg-red-50 cursor-pointer transition-all flex flex-col items-center justify-center text-center">
+                        <p className="font-bold text-lg text-gray-800 break-words">{customer.firstName} {customer.lastName}</p>
+                        <p className="text-sm text-gray-500 mt-1">{customer.referenceNumber}</p>
+                        <p className="text-xs text-gray-400 mt-2">{customer.documents?.length || 0} document(s)</p>
+                    </div>
+                ))}
+            </div>
+            )}
+        </div>
+    );
+    
+    const renderCustomerFolder = () => {
+        const customerDocs = selectedCustomer.documents || [];
+        return (
+            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+                <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
+                <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
+                    <div><h1 className="text-3xl font-bold text-gray-800">{selectedCustomer.firstName} {selectedCustomer.lastName}</h1><p className="text-gray-500 mt-1 font-mono">{selectedCustomer.referenceNumber}</p></div>
+                    <button onClick={() => setIsVoucherModalOpen(true)} className="w-full md:w-auto bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Generate Access Voucher</button>
+                </div>
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {fileCategories.map(category => {
+                        const filesInCategory = customerDocs.filter(doc => doc.category === category.name);
+                        return (
+                            <div key={category.name} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col">
+                                <h3 className="font-bold text-lg mb-3">{category.icon} {category.name}</h3>
+                                <div className="space-y-2 flex-grow">
+                                    {filesInCategory.length > 0 ? (
+                                        filesInCategory.map(file => (
+                                            <div key={file.id} className="bg-white p-2 rounded-md border flex justify-between items-center text-sm">
+                                                <div className="flex items-center truncate"><FileIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gray-500" /><span className="truncate">{file.name}</span></div>
+                                                <button onClick={() => handleDeleteFile(file.id)} className="text-gray-400 hover:text-red-600 flex-shrink-0 ml-2"><XIcon className="h-4 w-4"/></button>
+                                            </div>
+                                        ))
+                                    ) : ( <p className="text-sm text-gray-400 italic">No documents uploaded yet.</p> )}
+                                </div>
+                                <button onClick={() => handleUploadButtonClick(category.name)} className="w-full mt-4 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm">Upload File</button>
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-gray-100 min-h-screen p-4 md:p-8">
+            {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
+            {isCreateModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">Create New Customer Folder</h2>
+                        <p className="text-gray-500 mb-6">A unique reference number will be generated.</p>
+                        <div className="space-y-4">
+                            <div><label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label><input type="text" id="firstName" value={newCustomerFirstName} onChange={(e) => setNewCustomerFirstName(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-red-800 focus:border-red-800" /></div>
+                            <div><label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label><input type="text" id="lastName" value={newCustomerLastName} onChange={(e) => setNewCustomerLastName(e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-red-800 focus:border-red-800" /></div>
+                             <div><label className="block text-sm font-medium text-gray-700">Generated Reference Number</label><p className="mt-1 w-full border border-gray-200 bg-gray-50 rounded-lg p-2 font-mono text-gray-600">{newCustomerRef}</p></div>
+                        </div>
+                        <div className="flex justify-end gap-4 mt-8"><button onClick={() => setIsCreateModalOpen(false)} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button><button onClick={handleCreateCustomer} className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors">Create Folder</button></div>
+                    </div>
+                </div>
+            )}
+             {isVoucherModalOpen && selectedCustomer && (
+                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
+                        <button onClick={() => setIsVoucherModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6"/></button>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">Share Customer Access</h2>
+                        <p className="text-gray-500 mb-6">Share these details with your customer to access their portal.</p>
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 flex items-center gap-6">
+                            <div className="w-1/4 flex-shrink-0 flex items-center justify-center"><img src={piyamTravelLogoBase64} alt="Piyam Travel Logo" className="w-32 h-auto object-contain"/></div>
+                            <div className="flex-grow text-center border-l border-r border-gray-200 px-6">
+                                <p className="text-sm text-gray-500">Customer</p>
+                                <p className="text-xl font-bold text-gray-900">{selectedCustomer.firstName} {selectedCustomer.lastName}</p>
+                                <p className="text-sm text-gray-500 mt-4">Reference Number</p>
+                                <p className="text-xl font-mono text-red-800 bg-red-50 border border-red-200 rounded-md px-2 py-1 inline-block">{selectedCustomer.referenceNumber}</p>
+                                <p className="text-sm text-gray-500 mt-4">Login Website</p>
+                                <p className="text-lg font-semibold text-gray-900">bookings.piyamtravel.com</p>
+                            </div>
+                             <div className="w-1/4 flex-shrink-0 flex items-center justify-center">
+                                <div className="p-2 bg-white border rounded-md shadow-sm">
+                                    <QRCodeComponent value="https://bookings.piyamtravel.com" size={128} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                            <button onClick={() => handleCopy('https://bookings.piyamtravel.com', 'Link Copied!')} className="flex items-center justify-center w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><LinkIcon className="h-5 w-5 mr-2" />Copy Link</button>
+                             <button onClick={() => handleCopy( `Hello ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are ready. You can access your secure portal using the details below:\n\nWebsite: bookings.piyamtravel.com\nReference Number: ${selectedCustomer.referenceNumber}\nLast Name: ${selectedCustomer.lastName}\n\nThank you,\nPiyam Travel`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
+                        </div>
+                        {copySuccess && <p className="text-center text-green-600 font-semibold mt-4">{copySuccess}</p>}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
