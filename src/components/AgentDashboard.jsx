@@ -1,19 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
-import { piyamTravelLogoBase64 } from '../data'; // Import logo
+import { piyamTravelLogoBase64, clientPortalUrl } from '../data'; // Import centralized data
+import QRCode from 'qrcode.react'; // Import the new QR Code library
 
-// --- Components (QRCodeComponent and SVGs remain the same) ---
-const QRCodeComponent = ({ value, size }) => {
-    const ref = useRef(null);
-    useEffect(() => {
-        if (ref.current && window.QRCode) {
-            ref.current.innerHTML = '';
-            new window.QRCode(ref.current, { text: value, width: size, height: size, colorDark: "#000000", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.H });
-        }
-    }, [value, size]);
-    return <div ref={ref}></div>;
-};
+// --- (SVG Icons remain the same) ---
 const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
 const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
 const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
@@ -26,7 +17,7 @@ const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
 export default function AgentDashboard({ onLogout }) {
-    // ... (rest of the state and functions remain the same)
+    // ... (All state and functions remain the same)
     const [customers, setCustomers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -134,9 +125,10 @@ export default function AgentDashboard({ onLogout }) {
         `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-    // ... (rest of render functions remain largely the same, but check voucher modal for logo change)
+
     const renderDashboard = () => (
-        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+        // ... (renderDashboard JSX remains the same)
+         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
                 <div className="flex gap-4">
@@ -163,6 +155,7 @@ export default function AgentDashboard({ onLogout }) {
     );
     
     const renderCustomerFolder = () => {
+        // ... (renderCustomerFolder JSX remains the same)
         const customerDocs = selectedCustomer.documents || [];
         return (
             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
@@ -228,17 +221,17 @@ export default function AgentDashboard({ onLogout }) {
                                 <p className="text-sm text-gray-500 mt-4">Reference Number</p>
                                 <p className="text-xl font-mono text-red-800 bg-red-50 border border-red-200 rounded-md px-2 py-1 inline-block">{selectedCustomer.referenceNumber}</p>
                                 <p className="text-sm text-gray-500 mt-4">Login Website</p>
-                                <p className="text-lg font-semibold text-gray-900">bookings.piyamtravel.com</p>
+                                <p className="text-lg font-semibold text-gray-900">{clientPortalUrl.replace('https://', '')}</p>
                             </div>
                              <div className="w-1/4 flex-shrink-0 flex items-center justify-center">
                                 <div className="p-2 bg-white border rounded-md shadow-sm">
-                                    <QRCodeComponent value="https://bookings.piyamtravel.com" size={128} />
+                                    <QRCode value={clientPortalUrl} size={128} />
                                 </div>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                            <button onClick={() => handleCopy('https://bookings.piyamtravel.com', 'Link Copied!')} className="flex items-center justify-center w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><LinkIcon className="h-5 w-5 mr-2" />Copy Link</button>
-                             <button onClick={() => handleCopy( `Hello ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are ready. You can access your secure portal using the details below:\n\nWebsite: bookings.piyamtravel.com\nReference Number: ${selectedCustomer.referenceNumber}\nLast Name: ${selectedCustomer.lastName}\n\nThank you,\nPiyam Travel`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
+                            <button onClick={() => handleCopy(clientPortalUrl, 'Link Copied!')} className="flex items-center justify-center w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><LinkIcon className="h-5 w-5 mr-2" />Copy Link</button>
+                             <button onClick={() => handleCopy( `Hello ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are ready. You can access your secure portal using the details below:\n\nWebsite: ${clientPortalUrl}\nReference Number: ${selectedCustomer.referenceNumber}\nLast Name: ${selectedCustomer.lastName}\n\nThank you,\nPiyam Travel`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
                         </div>
                         {copySuccess && <p className="text-center text-green-600 font-semibold mt-4">{copySuccess}</p>}
                     </div>
