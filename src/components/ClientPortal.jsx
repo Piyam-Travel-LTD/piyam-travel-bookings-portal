@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { db } from '../firebase'; // Now we need the db again for the direct lookup
+import { db } from '../firebase';
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { piyamTravelLogoBase64 } from '../data';
 
-// --- (All SVG and other components remain the same) ---
+// ... (SVG Icons and ClientLoginPage remain the same) ...
 const UserIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> );
 const FingerprintIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 10a2 2 0 0 0-2 2c0 1.02.5 2.51 2 4 .5-1.5.5-2.5 2-4a2 2 0 0 0-2-2Z"/><path d="M12 2a10 10 0 0 0-10 10c0 4.4 3.6 10 10 10s10-5.6 10-10A10 10 0 0 0 12 2Z"/></svg> );
 const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
@@ -14,6 +14,7 @@ const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Trav
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
 const ClientLoginPage = ({ onLogin, setIsLoading }) => {
+    // ... (This component remains the same)
     const [refNumber, setRefNumber] = useState('');
     const [lastName, setLastName] = useState('');
     const [error, setError] = useState('');
@@ -23,13 +24,10 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
         setError('');
         setIsLoading(true);
 
-        // We are now querying Firestore directly from the client.
-        // The new security rules make this safe.
         try {
-            const fullRefNumber = `PT-${refNumber.trim().toUpperCase()}`;
             const customersRef = collection(db, "customers");
             const q = query(customersRef, 
-                where("referenceNumber", "==", fullRefNumber), 
+                where("referenceNumber", "==", `PT-${refNumber.trim().toUpperCase()}`), 
                 where("lastName", "==", lastName.trim())
             );
 
@@ -59,15 +57,7 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
                     <label htmlFor="refNumber" className="block text-sm font-medium text-gray-700">Reference Number</label>
                     <div className="mt-1 flex items-center">
                         <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">PT-</span>
-                        <input 
-                            type="text" 
-                            id="refNumber"
-                            value={refNumber}
-                            onChange={(e) => setRefNumber(e.target.value.toUpperCase())}
-                            placeholder="6P7GC2"
-                            className="flex-1 block w-full rounded-none rounded-r-lg p-2 border border-gray-300 focus:border-red-500 focus:ring-red-500 sm:text-sm"
-                            required
-                        />
+                        <input type="text" id="refNumber" value={refNumber} onChange={(e) => setRefNumber(e.target.value.toUpperCase())} placeholder="6P7GC2" className="flex-1 block w-full rounded-none rounded-r-lg p-2 border border-gray-300 focus:border-red-500 focus:ring-red-500 sm:text-sm" required />
                     </div>
                 </div>
                 <div>
@@ -87,7 +77,6 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
 };
 
 const ClientDashboard = ({ customer, onLogout }) => {
-    // ... (This component remains the same)
     const visibleCategories = fileCategories.filter(category => 
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
@@ -115,7 +104,11 @@ const ClientDashboard = ({ customer, onLogout }) => {
                                 {customer.documents.filter(doc => doc.category === category.name).map(file => (
                                     <div key={file.id} className="bg-gray-50 p-3 rounded-lg border flex justify-between items-center">
                                         <div className="flex items-center truncate"><FileIcon className="h-5 w-5 mr-3 flex-shrink-0 text-gray-500" /><span className="truncate font-medium text-gray-800">{file.name}</span></div>
-                                        <a href="#" download={file.name} className="flex items-center bg-red-800 text-white font-semibold py-1 px-3 rounded-lg hover:bg-red-700 transition-colors text-sm ml-4"><DownloadIcon className="h-4 w-4 mr-2" />Download</a>
+                                        {/* --- UPDATED DOWNLOAD LINK --- */}
+                                        <a href={file.url} target="_blank" rel="noopener noreferrer" download className="flex items-center bg-red-800 text-white font-semibold py-1 px-3 rounded-lg hover:bg-red-700 transition-colors text-sm ml-4">
+                                            <DownloadIcon className="h-4 w-4 mr-2" />
+                                            Download
+                                        </a>
                                     </div>
                                 ))}
                             </div>
@@ -136,6 +129,7 @@ const ClientDashboard = ({ customer, onLogout }) => {
 };
 
 export default function ClientPortal() {
+    // ... (This component remains the same)
     const [loggedInCustomer, setLoggedInCustomer] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
