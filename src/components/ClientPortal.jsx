@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// We no longer need to import firebase here directly
 import { piyamTravelLogoBase64 } from '../data';
 
 // --- (All SVG and other components remain the same) ---
@@ -23,7 +22,6 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
         setIsLoading(true);
 
         try {
-            // Use the relative path to our secure Vercel Function
             const response = await fetch('/api/lookup-customer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -33,16 +31,13 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
             const data = await response.json();
 
             if (!response.ok) {
-                // This will catch errors from the bouncer, like "Customer not found"
-                throw new Error(data.error || 'An unexpected error occurred.');
+                throw new Error(data.error || 'Customer not found.');
             }
             
-            // If successful, log the customer in
             onLogin(data);
 
         } catch (err) {
             console.error("Login error:", err);
-            // This ensures ANY error, including network errors, will be displayed
             setError(err.message || 'An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
@@ -57,9 +52,17 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
             <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
                     <label htmlFor="refNumber" className="block text-sm font-medium text-gray-700">Reference Number</label>
-                    <div className="mt-1 relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><FingerprintIcon className="h-5 w-5 text-gray-400" /></div>
-                        <input type="text" id="refNumber" value={refNumber} onChange={(e) => setRefNumber(e.target.value.toUpperCase())} placeholder="e.g., PT-A8B3C1" className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-red-800 focus:border-red-800" required />
+                    <div className="mt-1 flex items-center">
+                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">PT-</span>
+                        <input 
+                            type="text" 
+                            id="refNumber"
+                            value={refNumber}
+                            onChange={(e) => setRefNumber(e.target.value.toUpperCase())}
+                            placeholder="6P7GC2"
+                            className="flex-1 block w-full rounded-none rounded-r-lg border-gray-300 focus:border-red-500 focus:ring-red-500 sm:text-sm"
+                            required
+                        />
                     </div>
                 </div>
                 <div>
@@ -79,7 +82,6 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
 };
 
 const ClientDashboard = ({ customer, onLogout }) => {
-    // ... (This component remains the same)
     const visibleCategories = fileCategories.filter(category => 
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
