@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
 import QRCode from 'qrcode.react';
 
@@ -12,18 +12,21 @@ const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width
 const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
 const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
 const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
-const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
+const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
+const TrashIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> );
+
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
 export default function AgentDashboard({ onLogout }) {
-    // ... (state setup remains the same)
     const [customers, setCustomers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [newCustomerFirstName, setNewCustomerFirstName] = useState('');
     const [newCustomerLastName, setNewCustomerLastName] = useState('');
     const [copySuccess, setCopySuccess] = useState('');
@@ -31,7 +34,6 @@ export default function AgentDashboard({ onLogout }) {
     const [currentUploadCategory, setCurrentUploadCategory] = useState('');
     const [uploadingStatus, setUploadingStatus] = useState({});
 
-    // ... (useEffect and other functions remain largely the same)
     useEffect(() => {
         const fetchCustomers = async () => {
             setIsLoading(true);
@@ -40,11 +42,8 @@ export default function AgentDashboard({ onLogout }) {
                 const customerSnapshot = await getDocs(customersCollection);
                 const customerList = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setCustomers(customerList);
-            } catch (error) {
-                console.error("Error fetching customers: ", error);
-            } finally {
-                setIsLoading(false);
-            }
+            } catch (error) { console.error("Error fetching customers: ", error); } 
+            finally { setIsLoading(false); }
         };
         fetchCustomers();
     }, []);
@@ -62,10 +61,6 @@ export default function AgentDashboard({ onLogout }) {
         navigator.clipboard.writeText(textToCopy).then(() => {
             setCopySuccess(message);
             setTimeout(() => setCopySuccess(''), 2000);
-        }, (err) => {
-            console.error('Could not copy text: ', err);
-            setCopySuccess('Failed to copy!');
-             setTimeout(() => setCopySuccess(''), 2000);
         });
     };
 
@@ -93,45 +88,36 @@ export default function AgentDashboard({ onLogout }) {
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file || !selectedCustomer) return;
-        
         setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Uploading...'}));
-
         try {
             const urlResponse = await fetch('/api/generate-upload-url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileName: file.name, customerId: selectedCustomer.id }),
             });
-            
             if (!urlResponse.ok) throw new Error('Could not get upload URL.');
             const { uploadUrl, publicUrl } = await urlResponse.json();
-
             const uploadResponse = await fetch(uploadUrl, {
                 method: 'PUT',
                 body: file,
                 headers: { 'Content-Type': file.type },
             });
-
             if (!uploadResponse.ok) throw new Error('File upload failed.');
-
             const newDocument = {
                 id: Date.now(),
                 category: currentUploadCategory,
                 name: file.name,
                 url: publicUrl,
-                fileKey: publicUrl.split('/').slice(3).join('/'), // Extracts "customerId/timestamp-filename.pdf"
+                fileKey: publicUrl.split(process.env.R2_PUBLIC_URL + '/')[1],
             };
-
             const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments });
-            
             const updatedCustomer = { ...selectedCustomer, documents: updatedDocuments };
             const updatedCustomers = customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c);
             setCustomers(updatedCustomers);
             setSelectedCustomer(updatedCustomer);
-             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
-
+            setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
         } catch (error) {
             console.error("File upload process failed:", error);
             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Upload Failed!'}));
@@ -139,39 +125,38 @@ export default function AgentDashboard({ onLogout }) {
         event.target.value = null;
     };
     
-    // --- UPDATED DELETE FILE LOGIC ---
     const handleDeleteFile = async (fileToDelete) => {
-        if (!fileToDelete || !fileToDelete.fileKey) {
-            console.error("Cannot delete file: missing file key.");
-            return;
-        }
-
+        if (!fileToDelete || !fileToDelete.fileKey) { console.error("Missing file key."); return; }
         try {
-            // Step 1: Tell our secure backend to delete the file from Cloudflare R2
-            const deleteResponse = await fetch('/api/delete-file', {
+            await fetch('/api/delete-file', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileKey: fileToDelete.fileKey }),
             });
-
-            if (!deleteResponse.ok) {
-                throw new Error('Failed to delete file from storage.');
-            }
-
-            // Step 2: If R2 deletion was successful, remove the record from Firestore
             const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments });
-
-            // Step 3: Update local state to reflect the change immediately
             const updatedCustomer = { ...selectedCustomer, documents: updatedDocuments };
             const updatedCustomers = customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c);
             setCustomers(updatedCustomers);
             setSelectedCustomer(updatedCustomer);
+        } catch(error) { console.error("Error deleting file:", error); }
+    };
 
-        } catch(error) {
-            console.error("Error deleting file:", error);
-            // Optionally, show an error message to the user
+    const handleDeleteFolder = async () => {
+        if (deleteConfirmText !== 'Delete') return;
+        try {
+            await fetch('/api/delete-customer-folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customerId: selectedCustomer.id }),
+            });
+            setCustomers(customers.filter(c => c.id !== selectedCustomer.id));
+            setSelectedCustomer(null);
+            setIsDeleteModalOpen(false);
+            setDeleteConfirmText('');
+        } catch (error) {
+            console.error("Error deleting folder:", error);
         }
     };
 
@@ -186,7 +171,6 @@ export default function AgentDashboard({ onLogout }) {
     );
 
     const renderDashboard = () => (
-        // ... (renderDashboard JSX remains the same)
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
@@ -220,7 +204,10 @@ export default function AgentDashboard({ onLogout }) {
                 <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
                 <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                     <div><h1 className="text-3xl font-bold text-gray-800">{selectedCustomer.firstName} {selectedCustomer.lastName}</h1><p className="text-gray-500 mt-1 font-mono">{selectedCustomer.referenceNumber}</p></div>
-                    <button onClick={() => setIsVoucherModalOpen(true)} className="w-full md:w-auto bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Generate Access Voucher</button>
+                    <div className="flex gap-2">
+                        <button onClick={() => setIsVoucherModalOpen(true)} className="w-full md:w-auto bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Generate Access Voucher</button>
+                        <button onClick={() => setIsDeleteModalOpen(true)} className="flex items-center justify-center bg-red-100 text-red-800 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition-colors"><TrashIcon/>Delete Folder</button>
+                    </div>
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -239,12 +226,7 @@ export default function AgentDashboard({ onLogout }) {
                                         ))
                                     ) : ( <p className="text-sm text-gray-400 italic">No documents uploaded yet.</p> )}
                                 </div>
-                                 <button
-                                    onClick={() => handleUploadButtonClick(category.name)}
-                                    disabled={!!uploadingStatus[category.name]}
-                                    className="w-full mt-4 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm disabled:bg-gray-200 disabled:cursor-not-allowed">
-                                    {uploadingStatus[category.name] || 'Upload File'}
-                                </button>
+                                 <button onClick={() => handleUploadButtonClick(category.name)} disabled={!!uploadingStatus[category.name]} className="w-full mt-4 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm disabled:bg-gray-200 disabled:cursor-not-allowed">{uploadingStatus[category.name] || 'Upload File'}</button>
                             </div>
                         )
                     })}
@@ -269,8 +251,8 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                 </div>
             )}
-             {isVoucherModalOpen && selectedCustomer && (
-                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            {isVoucherModalOpen && selectedCustomer && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
                         <button onClick={() => setIsVoucherModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6"/></button>
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Share Customer Access</h2>
@@ -285,17 +267,37 @@ export default function AgentDashboard({ onLogout }) {
                                 <p className="text-sm text-gray-500 mt-4">Login Website</p>
                                 <p className="text-lg font-semibold text-gray-900">{clientPortalUrl.replace('https://', '')}</p>
                             </div>
-                             <div className="w-1/4 flex-shrink-0 flex items-center justify-center">
-                                <div className="p-2 bg-white border rounded-md shadow-sm">
-                                    <QRCode value={clientPortalUrl} size={128} />
-                                </div>
-                            </div>
+                            <div className="w-1/4 flex-shrink-0 flex items-center justify-center"><div className="p-2 bg-white border rounded-md shadow-sm"><QRCode value={clientPortalUrl} size={128} /></div></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                             <button onClick={() => handleCopy(clientPortalUrl, 'Link Copied!')} className="flex items-center justify-center w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><LinkIcon className="h-5 w-5 mr-2" />Copy Link</button>
-                             <button onClick={() => handleCopy( `Hello ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are ready. You can access your secure portal using the details below:\n\nWebsite: ${clientPortalUrl}\nReference Number: ${selectedCustomer.referenceNumber}\nLast Name: ${selectedCustomer.lastName}\n\nThank you,\nPiyam Travel`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
+                            <button onClick={() => handleCopy( `Hello ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are ready...`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
                         </div>
                         {copySuccess && <p className="text-center text-green-600 font-semibold mt-4">{copySuccess}</p>}
+                    </div>
+                </div>
+            )}
+             {isDeleteModalOpen && selectedCustomer && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                        <h2 className="text-2xl font-bold text-red-800 mb-2">Delete Customer Folder</h2>
+                        <p className="text-gray-600 mb-4">This action is permanent and cannot be undone. All associated documents will be deleted from storage.</p>
+                        <p className="text-sm text-gray-700">To confirm, please type **Delete** in the box below.</p>
+                        <input 
+                            type="text" 
+                            value={deleteConfirmText}
+                            onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            className="mt-2 w-full border border-gray-300 rounded-lg p-2 focus:ring-red-800 focus:border-red-800" 
+                        />
+                        <div className="flex justify-end gap-4 mt-6">
+                            <button onClick={() => setIsDeleteModalOpen(false)} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                            <button 
+                                onClick={handleDeleteFolder} 
+                                disabled={deleteConfirmText !== 'Delete'}
+                                className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed">
+                                Permanently Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
