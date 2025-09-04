@@ -1,39 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import AgentLogin from './components/AgentLogin';
 import AgentDashboard from './components/AgentDashboard';
 import ClientPortal from './components/ClientPortal';
 
-// This is a simple router to switch between views.
+// Initialize Firebase Auth
+const auth = getAuth();
+
 export default function App() {
-  const [view, setView] = useState('agent-login'); // 'agent-login', 'agent-dashboard', 'client-portal'
-  
-  // This is a simulation of a successful agent login
-  const handleAgentLogin = () => {
-    setView('agent-dashboard');
+  const [user, setUser] = useState(null); // Will hold the logged-in user object
+  const [isLoading, setIsLoading] = useState(true); // To show a loading state while checking auth
+
+  useEffect(() => {
+    // This listener checks the user's sign-in state
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in.
+        setUser(user);
+      } else {
+        // User is signed out.
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = () => {
+    signOut(auth).catch((error) => {
+      console.error("Sign out error:", error);
+    });
   };
 
-  const renderView = () => {
-    switch (view) {
-      case 'agent-dashboard':
-        return <AgentDashboard />;
-      case 'client-portal':
-        return <ClientPortal />;
-      case 'agent-login':
-      default:
-        return <AgentLogin onLogin={handleAgentLogin} />;
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <p className="text-gray-500">Loading Portal...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      {/* This temporary navigation helps switch views during development */}
-      <nav className="bg-gray-800 text-white p-2 text-xs text-center no-print">
-        <span className="font-bold">DEV-NAV:</span>
-        <button onClick={() => setView('agent-login')} className="mx-2 underline">Agent Login</button>
-        <button onClick={() => setView('agent-dashboard')} className="mx-2 underline">Agent Dashboard</button>
-        <button onClick={() => setView('client-portal')} className="mx-2 underline">Client Portal</button>
-      </nav>
-      {renderView()}
+      {/* If a user is logged in, show the dashboard. Otherwise, show the login page. */}
+      {user ? (
+        <AgentDashboard onLogout={handleLogout} />
+      ) : (
+        <AgentLogin />
+      )}
     </div>
   );
 }
