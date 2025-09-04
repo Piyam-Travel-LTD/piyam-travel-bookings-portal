@@ -8,16 +8,14 @@ import ClientPortal from './components/ClientPortal';
 export default function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [view, setView] = useState('agent-login'); // Default view
+  
+  // This is a simple router. We'll check the URL path to decide which portal to show.
+  const isClientPortal = window.location.pathname === '/client';
 
   useEffect(() => {
+    // This listener checks the agent's sign-in state
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      if (user) {
-        setView('agent-dashboard');
-      } else {
-        setView('agent-login');
-      }
       setIsLoading(false);
     });
     return () => unsubscribe();
@@ -35,26 +33,12 @@ export default function App() {
     );
   }
 
-  const renderView = () => {
-    switch (view) {
-      case 'agent-dashboard':
-        return user ? <AgentDashboard onLogout={handleLogout} /> : <AgentLogin />;
-      case 'client-portal':
-        return <ClientPortal />;
-      case 'agent-login':
-      default:
-        return <AgentLogin />;
-    }
-  };
-
-  return (
-    <div>
-      <nav className="bg-gray-800 text-white p-2 text-xs text-center no-print">
-        <span className="font-bold">DEV-NAV (for testing):</span>
-        <button onClick={() => setView('agent-login')} className="mx-2 underline">Agent Login</button>
-        <button onClick={() => setView('client-portal')} className="mx-2 underline">Client Portal</button>
-      </nav>
-      {renderView()}
-    </div>
-  );
+  // --- View Rendering Logic ---
+  // If the URL is for the client portal, show that.
+  // Otherwise, check if an agent is logged in and show either the dashboard or agent login.
+  if (isClientPortal) {
+    return <ClientPortal />;
+  } else {
+    return user ? <AgentDashboard onLogout={handleLogout} /> : <AgentLogin />;
+  }
 }
