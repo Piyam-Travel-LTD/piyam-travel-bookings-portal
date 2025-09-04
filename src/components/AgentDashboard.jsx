@@ -4,15 +4,15 @@ import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore"
 import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
 import QRCode from 'qrcode.react';
 
-// ... (SVG Icons remain the same) ...
+// ... (All SVG components and constants remain the same) ...
 const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
 const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
 const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
 const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
 const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
 const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
-const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
-const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
+const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
+const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
@@ -31,8 +31,8 @@ export default function AgentDashboard({ onLogout }) {
     const [currentUploadCategory, setCurrentUploadCategory] = useState('');
     const [uploadingStatus, setUploadingStatus] = useState({});
 
-    // ... (useEffect and other functions remain the same)
-     useEffect(() => {
+    // ... (useEffect and other functions remain largely the same)
+    useEffect(() => {
         const fetchCustomers = async () => {
             setIsLoading(true);
             try {
@@ -90,7 +90,6 @@ export default function AgentDashboard({ onLogout }) {
         }
     };
     
-    // --- UPDATED FILE UPLOAD LOGIC ---
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file || !selectedCustomer) return;
@@ -98,7 +97,6 @@ export default function AgentDashboard({ onLogout }) {
         setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Uploading...'}));
 
         try {
-            // Step 1: Ask our secure backend for a one-time upload URL
             const urlResponse = await fetch('/api/generate-upload-url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -108,7 +106,6 @@ export default function AgentDashboard({ onLogout }) {
             if (!urlResponse.ok) throw new Error('Could not get upload URL.');
             const { uploadUrl, publicUrl } = await urlResponse.json();
 
-            // Step 2: Upload the file directly to Cloudflare R2 using the secure URL
             const uploadResponse = await fetch(uploadUrl, {
                 method: 'PUT',
                 body: file,
@@ -117,19 +114,18 @@ export default function AgentDashboard({ onLogout }) {
 
             if (!uploadResponse.ok) throw new Error('File upload failed.');
 
-            // Step 3: Save the file's metadata and PUBLIC URL to Firestore
             const newDocument = {
                 id: Date.now(),
                 category: currentUploadCategory,
                 name: file.name,
-                url: publicUrl, // This is the permanent, public link to the file
+                url: publicUrl,
+                fileKey: publicUrl.split('/').slice(3).join('/'), // Extracts "customerId/timestamp-filename.pdf"
             };
 
             const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments });
             
-            // Update local state to show the new file immediately
             const updatedCustomer = { ...selectedCustomer, documents: updatedDocuments };
             const updatedCustomers = customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c);
             setCustomers(updatedCustomers);
@@ -140,23 +136,44 @@ export default function AgentDashboard({ onLogout }) {
             console.error("File upload process failed:", error);
             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Upload Failed!'}));
         }
-
         event.target.value = null;
     };
     
-     const handleDeleteFile = async (fileId) => {
-        // Note: This only deletes the Firestore record. Deleting from R2 requires another backend function.
-         const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileId);
-         const customerDocRef = doc(db, "customers", selectedCustomer.id);
-         try {
+    // --- UPDATED DELETE FILE LOGIC ---
+    const handleDeleteFile = async (fileToDelete) => {
+        if (!fileToDelete || !fileToDelete.fileKey) {
+            console.error("Cannot delete file: missing file key.");
+            return;
+        }
+
+        try {
+            // Step 1: Tell our secure backend to delete the file from Cloudflare R2
+            const deleteResponse = await fetch('/api/delete-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileKey: fileToDelete.fileKey }),
+            });
+
+            if (!deleteResponse.ok) {
+                throw new Error('Failed to delete file from storage.');
+            }
+
+            // Step 2: If R2 deletion was successful, remove the record from Firestore
+            const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
+            const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments });
+
+            // Step 3: Update local state to reflect the change immediately
             const updatedCustomer = { ...selectedCustomer, documents: updatedDocuments };
             const updatedCustomers = customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c);
             setCustomers(updatedCustomers);
             setSelectedCustomer(updatedCustomer);
-         } catch(error) { console.error("Error updating document: ", error); }
-    }
 
+        } catch(error) {
+            console.error("Error deleting file:", error);
+            // Optionally, show an error message to the user
+        }
+    };
 
     const handleUploadButtonClick = (category) => {
         setCurrentUploadCategory(category);
@@ -168,8 +185,8 @@ export default function AgentDashboard({ onLogout }) {
         (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    // --- (renderDashboard and renderCustomerFolder remain mostly the same, with a small change for upload status) ---
-     const renderDashboard = () => (
+    const renderDashboard = () => (
+        // ... (renderDashboard JSX remains the same)
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
@@ -217,7 +234,7 @@ export default function AgentDashboard({ onLogout }) {
                                         filesInCategory.map(file => (
                                             <div key={file.id} className="bg-white p-2 rounded-md border flex justify-between items-center text-sm">
                                                 <div className="flex items-center truncate"><FileIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gray-500" /><span className="truncate">{file.name}</span></div>
-                                                <button onClick={() => handleDeleteFile(file.id)} className="text-gray-400 hover:text-red-600 flex-shrink-0 ml-2"><XIcon className="h-4 w-4"/></button>
+                                                <button onClick={() => handleDeleteFile(file)} className="text-gray-400 hover:text-red-600 flex-shrink-0 ml-2"><XIcon className="h-4 w-4"/></button>
                                             </div>
                                         ))
                                     ) : ( <p className="text-sm text-gray-400 italic">No documents uploaded yet.</p> )}
