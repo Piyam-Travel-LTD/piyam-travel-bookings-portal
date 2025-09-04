@@ -1,37 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from './firebase'; // Import auth from the central file
 import AgentLogin from './components/AgentLogin';
 import AgentDashboard from './components/AgentDashboard';
 import ClientPortal from './components/ClientPortal';
 
-// Initialize Firebase Auth
-const auth = getAuth();
-
 export default function App() {
-  const [user, setUser] = useState(null); // Will hold the logged-in user object
-  const [isLoading, setIsLoading] = useState(true); // To show a loading state while checking auth
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [view, setView] = useState('agent-login'); // Default view
 
   useEffect(() => {
-    // This listener checks the user's sign-in state
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
       if (user) {
-        // User is signed in.
-        setUser(user);
+        setView('agent-dashboard');
       } else {
-        // User is signed out.
-        setUser(null);
+        setView('agent-login');
       }
       setIsLoading(false);
     });
-
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
   const handleLogout = () => {
-    signOut(auth).catch((error) => {
-      console.error("Sign out error:", error);
-    });
+    signOut(auth).catch((error) => console.error("Sign out error:", error));
   };
 
   if (isLoading) {
@@ -42,14 +35,26 @@ export default function App() {
     );
   }
 
+  const renderView = () => {
+    switch (view) {
+      case 'agent-dashboard':
+        return user ? <AgentDashboard onLogout={handleLogout} /> : <AgentLogin />;
+      case 'client-portal':
+        return <ClientPortal />;
+      case 'agent-login':
+      default:
+        return <AgentLogin />;
+    }
+  };
+
   return (
     <div>
-      {/* If a user is logged in, show the dashboard. Otherwise, show the login page. */}
-      {user ? (
-        <AgentDashboard onLogout={handleLogout} />
-      ) : (
-        <AgentLogin />
-      )}
+      <nav className="bg-gray-800 text-white p-2 text-xs text-center no-print">
+        <span className="font-bold">DEV-NAV (for testing):</span>
+        <button onClick={() => setView('agent-login')} className="mx-2 underline">Agent Login</button>
+        <button onClick={() => setView('client-portal')} className="mx-2 underline">Client Portal</button>
+      </nav>
+      {renderView()}
     </div>
   );
 }
