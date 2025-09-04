@@ -11,7 +11,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This listener checks the user's sign-in state and sets the user object.
+    // This listener checks the agent's sign-in state and sets the user object.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsLoading(false);
@@ -36,18 +36,18 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Route for the Client Portal */}
-        <Route path="/client" element={<ClientPortal />} />
+        {/* Route for the Client Portal - This is now the default */}
+        <Route path="/" element={<ClientPortal />} />
         
         {/* Route for the Agent Side */}
         <Route 
-          path="/" 
+          path="/agent" 
           element={
             user ? <AgentDashboard onLogout={handleLogout} /> : <AgentLogin />
           } 
         />
         
-        {/* Redirect any other path to the agent login */}
+        {/* Redirect any other unknown path back to the client portal */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
