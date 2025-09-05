@@ -4,16 +4,16 @@ import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore"
 import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
 import QRCode from 'qrcode.react';
 
-// ... (All SVG components and constants remain the same) ...
+// --- (All SVG components and constants remain the same) ---
 const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
 const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
 const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
 const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
 const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
 const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
-const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
-const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
-const TrashIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> );
+const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
+const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
+const TrashIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> );
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
@@ -66,8 +66,9 @@ export default function AgentDashboard({ onLogout }) {
     const handleCreateCustomer = async () => {
         if (newCustomerFirstName.trim() && newCustomerLastName.trim()) {
             const newCustomerData = {
-                firstName: newCustomerFirstName,
-                lastName: newCustomerLastName,
+                firstName: newCustomerFirstName.trim(),
+                lastName: newCustomerLastName.trim(),
+                lastName_lowercase: newCustomerLastName.trim().toLowerCase(),
                 referenceNumber: newCustomerRef,
                 documents: [],
                 createdAt: new Date().toISOString(),
@@ -88,43 +89,35 @@ export default function AgentDashboard({ onLogout }) {
         const file = event.target.files[0];
         if (!file || !selectedCustomer) return;
         setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Uploading...'}));
-
         try {
             const urlResponse = await fetch('/api/generate-upload-url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileName: file.name, customerId: selectedCustomer.id }),
             });
-            
             if (!urlResponse.ok) throw new Error('Could not get upload URL.');
-            const { uploadUrl, publicUrl, fileKey } = await urlResponse.json(); // <-- Get fileKey here
-
+            const { uploadUrl, publicUrl, fileKey } = await urlResponse.json();
             const uploadResponse = await fetch(uploadUrl, {
                 method: 'PUT',
                 body: file,
                 headers: { 'Content-Type': file.type },
             });
-
             if (!uploadResponse.ok) throw new Error('File upload failed.');
-
             const newDocument = {
                 id: Date.now(),
                 category: currentUploadCategory,
                 name: file.name,
                 url: publicUrl,
-                fileKey: fileKey, // <-- Use the fileKey from the backend
+                fileKey: fileKey,
             };
-
             const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments });
-            
             const updatedCustomer = { ...selectedCustomer, documents: updatedDocuments };
             const updatedCustomers = customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c);
             setCustomers(updatedCustomers);
             setSelectedCustomer(updatedCustomer);
-            setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
-
+             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
         } catch (error) {
             console.error("File upload process failed:", error);
             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Upload Failed!'}));
@@ -282,7 +275,14 @@ export default function AgentDashboard({ onLogout }) {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                             <button onClick={() => handleCopy(clientPortalUrl, 'Link Copied!')} className="flex items-center justify-center w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><LinkIcon className="h-5 w-5 mr-2" />Copy Link</button>
-                            <button onClick={() => handleCopy( `Hello ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are ready...`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
+                             <button 
+                                onClick={() => handleCopy(
+                                    `Dear ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are now available in your secure client portal. Please use the details below to log in:\n\nWebsite: ${clientPortalUrl}\nReference Number: ${selectedCustomer.referenceNumber}\nLast Name: ${selectedCustomer.lastName}\n\nKind regards,\nThe Piyam Travel Team`,
+                                    'Details Copied!'
+                                )}
+                                className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors">
+                                <CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text
+                            </button>
                         </div>
                         {copySuccess && <p className="text-center text-green-600 font-semibold mt-4">{copySuccess}</p>}
                     </div>
