@@ -21,7 +21,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Filename and customer ID are required.' });
   }
   
-  // Sanitize filename to prevent issues
   const safeFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '');
   const fileKey = `${customerId}/${Date.now()}-${safeFileName}`;
 
@@ -29,14 +28,15 @@ export default async function handler(req, res) {
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
       Key: fileKey,
+      ContentType: req.headers['content-type'],
     });
 
-    // Generate a secure, one-time URL for uploading
-    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 }); // URL is valid for 5 minutes
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
 
     res.status(200).json({ 
       uploadUrl: signedUrl, 
-      publicUrl: `${process.env.R2_PUBLIC_URL}/${fileKey}` 
+      publicUrl: `${process.env.R2_PUBLIC_URL}/${fileKey}`,
+      fileKey: fileKey // <-- This is the crucial addition
     });
 
   } catch (error) {
