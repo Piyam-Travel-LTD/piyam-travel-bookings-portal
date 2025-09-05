@@ -1,7 +1,5 @@
 import admin from 'firebase-admin';
 
-// This securely initializes the Firebase Admin SDK using the credentials
-// you stored in Vercel's Environment Variables.
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -27,9 +25,10 @@ export default async function handler(req, res) {
 
   try {
     const customersRef = db.collection('customers');
+    // --- UPDATED QUERY LOGIC ---
     const q = customersRef
       .where('referenceNumber', '==', `PT-${referenceNumber.trim().toUpperCase()}`)
-      .where('lastName', '==', lastName.trim());
+      .where('lastName_lowercase', '==', lastName.trim().toLowerCase()); // Search the lowercase field
       
     const querySnapshot = await q.get();
 
@@ -38,7 +37,6 @@ export default async function handler(req, res) {
     }
 
     const customerData = querySnapshot.docs[0].data();
-    // Important: We don't send the customer's ID, only the data they need to see.
     return res.status(200).json(customerData);
 
   } catch (error) {
