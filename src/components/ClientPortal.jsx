@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { db } from '../firebase';
-import { collection, query, where, getDocs } from "firebase/firestore";
 import { piyamTravelLogoBase64 } from '../data';
 
 // --- (All SVG and other components remain the same) ---
@@ -15,6 +13,7 @@ const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Trav
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
 const ClientLoginPage = ({ onLogin, setIsLoading }) => {
+    // ... (This component remains unchanged)
     const [refNumber, setRefNumber] = useState('');
     const [lastName, setLastName] = useState('');
     const [error, setError] = useState('');
@@ -75,13 +74,10 @@ const ClientDashboard = ({ customer, onLogout }) => {
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
 
-    // --- THIS FUNCTION IS NOW CORRECTED ---
+    // --- THIS FUNCTION IS NOW CORRECTED TO HANDLE ISO STRINGS ---
     const getExpiryDate = () => {
-        // The data from the API will have `_seconds` instead of `seconds`
-        const seconds = customer.createdAt?._seconds || customer.createdAt?.seconds;
-        if (!seconds) return 'N/A';
-        
-        const creationDate = new Date(seconds * 1000);
+        if (!customer.createdAt) return 'N/A';
+        const creationDate = new Date(customer.createdAt); // Directly use the ISO string
         creationDate.setMonth(creationDate.getMonth() + 10);
         return creationDate.toLocaleDateString('en-GB', {
             day: 'numeric',
@@ -91,9 +87,8 @@ const ClientDashboard = ({ customer, onLogout }) => {
     };
     
     const getLastUpdatedDate = () => {
-        const seconds = customer.lastUpdatedAt?._seconds || customer.lastUpdatedAt?.seconds;
-        if(!seconds) return 'Not available';
-        return new Date(seconds * 1000).toLocaleString('en-GB');
+        if(!customer.lastUpdatedAt) return 'Not available';
+        return new Date(customer.lastUpdatedAt).toLocaleString('en-GB');
     }
 
     return (
@@ -144,10 +139,7 @@ const ClientDashboard = ({ customer, onLogout }) => {
                     ))}
                 </div>
             ) : (
-                 <div className="text-center py-12">
-                    <p className="text-gray-500">No documents have been uploaded for you yet.</p>
-                    <p className="text-gray-500 mt-2">Please check back later or contact your travel agent.</p>
-                </div>
+                 <div className="text-center py-12"><p className="text-gray-500">No documents have been uploaded for you yet.</p><p className="text-gray-500 mt-2">Please check back later or contact your travel agent.</p></div>
             )}
 
             <div className="mt-8 pt-4 border-t border-gray-200">
