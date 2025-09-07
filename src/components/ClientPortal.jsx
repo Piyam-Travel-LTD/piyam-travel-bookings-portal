@@ -83,6 +83,7 @@ const ClientDashboard = ({ customer, onLogout }) => {
     );
 
     const getExpiryDate = () => {
+        // Use createdAt for expiry calculation as requested
         if (!customer.createdAt?.seconds) return 'N/A';
         const creationDate = new Date(customer.createdAt.seconds * 1000);
         creationDate.setMonth(creationDate.getMonth() + 10);
