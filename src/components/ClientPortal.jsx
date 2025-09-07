@@ -22,6 +22,7 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
         setIsLoading(true);
 
         try {
+            // This now calls our secure backend function instead of Firestore directly
             const response = await fetch('/api/lookup-customer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -31,13 +32,16 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Customer not found.');
+                // This will catch errors from the bouncer, like "Customer not found"
+                throw new Error(data.error || 'An unexpected error occurred.');
             }
             
+            // If successful, log the customer in
             onLogin(data);
 
         } catch (err) {
             console.error("Login error:", err);
+            // This ensures ANY error, including network errors, will be displayed
             setError(err.message || 'An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
