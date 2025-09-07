@@ -44,14 +44,13 @@ export default async function handler(req, res) {
     const doc = querySnapshot.docs[0];
     const customerData = doc.data();
 
-    // --- THIS IS THE CRUCIAL FIX ---
-    // We manually translate the Firestore Timestamps into a universal format (ISO string)
-    // before sending the data to the client. This prevents any data format errors.
+    // This is the crucial fix for the date translation
     const finalData = {
       ...customerData,
       id: doc.id,
       createdAt: customerData.createdAt ? customerData.createdAt.toDate().toISOString() : null,
       lastUpdatedAt: customerData.lastUpdatedAt ? customerData.lastUpdatedAt.toDate().toISOString() : null,
+      accessExpiresAt: customerData.accessExpiresAt ? customerData.accessExpiresAt.toDate().toISOString() : null,
     };
     
     return res.status(200).json(finalData);

@@ -4,10 +4,10 @@ import { collection, getDocs, addDoc, doc, updateDoc, serverTimestamp } from "fi
 import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
 import QRCode from 'qrcode.react';
 
-// --- (All SVG components remain the same) ---
-const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
-const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
-const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
+// --- (All SVG components and constants remain the same) ---
+const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
+const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
+const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
 const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
 const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
 const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
@@ -96,41 +96,62 @@ export default function AgentDashboard({ onLogout }) {
         }
     };
     
+    // --- UPDATED MULTI-FILE UPLOAD LOGIC ---
     const handleFileChange = async (event) => {
-        const file = event.target.files[0];
-        if (!file || !selectedCustomer) return;
-        setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Uploading...'}));
-        try {
-            const urlResponse = await fetch('/api/generate-upload-url', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileName: file.name, customerId: selectedCustomer.id }),
-            });
-            if (!urlResponse.ok) throw new Error('Could not get upload URL.');
-            const { uploadUrl, publicUrl, fileKey } = await urlResponse.json();
-            const uploadResponse = await fetch(uploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type },
-            });
-            if (!uploadResponse.ok) throw new Error('File upload failed.');
-            const newDocument = {
-                id: Date.now(),
-                category: currentUploadCategory,
-                name: file.name,
-                url: publicUrl,
-                fileKey: fileKey,
-            };
-            const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
+        const files = Array.from(event.target.files);
+        if (files.length === 0 || !selectedCustomer) return;
+        
+        let newDocuments = [];
+        let failedUploads = 0;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            setUploadingStatus(prev => ({...prev, [currentUploadCategory]: `Uploading ${i + 1} of ${files.length}...`}));
+            try {
+                const urlResponse = await fetch('/api/generate-upload-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: file.name, customerId: selectedCustomer.id }),
+                });
+                if (!urlResponse.ok) throw new Error('Could not get upload URL.');
+                const { uploadUrl, publicUrl, fileKey } = await urlResponse.json();
+
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    body: file,
+                    headers: { 'Content-Type': file.type },
+                });
+                if (!uploadResponse.ok) throw new Error('File upload failed.');
+
+                newDocuments.push({
+                    id: Date.now() + i, // Add index to ensure unique ID
+                    category: currentUploadCategory,
+                    name: file.name,
+                    url: publicUrl,
+                    fileKey: fileKey,
+                });
+
+            } catch (error) {
+                console.error(`Failed to upload ${file.name}:`, error);
+                failedUploads++;
+            }
+        }
+
+        // Update Firestore and local state once after all uploads are attempted
+        if (newDocuments.length > 0) {
+            const updatedDocuments = [...(selectedCustomer.documents || []), ...newDocuments];
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
             updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
-            setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
-        } catch (error) {
-            console.error("File upload process failed:", error);
-            setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Upload Failed!'}));
         }
-        event.target.value = null;
+        
+        if (failedUploads > 0) {
+             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: `${failedUploads} file(s) failed!`}));
+        } else {
+            setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
+        }
+
+        event.target.value = null; // Reset file input
     };
     
     const handleDeleteFile = async (fileToDelete) => {
@@ -181,7 +202,7 @@ export default function AgentDashboard({ onLogout }) {
             accessExpiresAt: newExpiryDate, 
             lastUpdatedAt: serverTimestamp() 
         });
-        updateCustomerState({ ...selectedCustomer, accessExpiresAt: { toDate: () => newExpiryDate }, lastUpdatedAt: { toDate: () => new Date() }});
+        updateCustomerState({ ...selectedCustomer, accessExpiresAt: newExpiryDate, lastUpdatedAt: { toDate: () => new Date() }});
         setIsExtendModalOpen(false);
         alert(`Customer access has been extended until ${newExpiryDate.toLocaleDateString()}.`);
     };
@@ -198,7 +219,7 @@ export default function AgentDashboard({ onLogout }) {
         const note = {
             text: newNote.trim(),
             timestamp: new Date().toISOString(),
-            agent: 'Agent Name' // In a real app, this would be the logged-in agent's name
+            agent: 'Agent Name' 
         };
         const updatedNotes = [...(selectedCustomer.notes || []), note];
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
@@ -219,8 +240,8 @@ export default function AgentDashboard({ onLogout }) {
             (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     
-    const renderDashboard = () => (
-        // ... (renderDashboard JSX remains the same)
+    // --- (The render functions remain mostly the same, with a small change for the upload input) ---
+     const renderDashboard = () => (
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
@@ -309,11 +330,18 @@ export default function AgentDashboard({ onLogout }) {
     }
      return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".pdf,.jpg"
+                multiple // <-- This is the crucial change
+            />
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
-            {/* --- Modals --- */}
+            {/* ... (All modals remain the same) ... */}
             {isCreateModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    {/* ... Create Folder Modal JSX ... */}
                      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Create New Customer Folder</h2>
                         <p className="text-gray-500 mb-6">A unique reference number will be generated.</p>
@@ -328,7 +356,6 @@ export default function AgentDashboard({ onLogout }) {
             )}
             {isVoucherModalOpen && selectedCustomer && (
                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    {/* ... Voucher Modal JSX ... */}
                      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
                         <button onClick={() => setIsVoucherModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6"/></button>
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Share Customer Access</h2>
@@ -359,7 +386,6 @@ export default function AgentDashboard({ onLogout }) {
             )}
             {isDeleteModalOpen && selectedCustomer && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    {/* ... Delete Folder Modal JSX ... */}
                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
                         <h2 className="text-2xl font-bold text-red-800 mb-2">Delete Customer Folder</h2>
                         <p className="text-gray-600 mb-4">This action is permanent and cannot be undone. All associated documents will be deleted from storage.</p>
@@ -374,7 +400,6 @@ export default function AgentDashboard({ onLogout }) {
             )}
             {isNotesModalOpen && selectedCustomer && (
                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    {/* ... Notes Modal JSX ... */}
                      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg flex flex-col h-[70vh]">
                         <div className="flex-shrink-0"><h2 className="text-2xl font-bold text-gray-800 mb-2">Internal Notes</h2><p className="text-gray-500 mb-4">For agent use only. Notes are saved automatically.</p></div>
                         <div className="flex-grow bg-gray-50 rounded-lg p-4 overflow-y-auto mb-4">
@@ -399,7 +424,7 @@ export default function AgentDashboard({ onLogout }) {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Extend Customer Access</h2>
-                        <p className="text-gray-600 mb-6">Select a new access duration from today. The current 10-month expiry based on creation date will be overridden.</p>
+                        <p className="text-gray-600 mb-6">Select a new access duration. The expiry will be calculated from today.</p>
                         <div className="flex flex-col gap-4">
                             <button onClick={() => handleExtendAccess(1)} className="w-full bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend for 1 Month</button>
                             <button onClick={() => handleExtendAccess(3)} className="w-full bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend for 3 Months</button>

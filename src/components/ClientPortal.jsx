@@ -79,23 +79,28 @@ const ClientDashboard = ({ customer, onLogout }) => {
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
 
+    // --- THIS FUNCTION IS NOW CORRECTED TO HANDLE ALL DATE FORMATS ---
     const getExpiryDate = () => {
-        const dateToUse = customer.accessExpiresAt || customer.createdAt;
-        if (!dateToUse?.seconds) return 'N/A';
-
-        const expiryBaseDate = new Date(dateToUse.seconds * 1000);
-        
+        // Priority 1: Use the specific extension date if it exists.
+        // The API sends this as a universal ISO string.
         if (customer.accessExpiresAt) {
-             return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        } else {
-            expiryBaseDate.setMonth(expiryBaseDate.getMonth() + 10);
-            return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            const expiryDate = new Date(customer.accessExpiresAt);
+            return expiryDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         }
+        
+        // Priority 2: Fallback to the original creation date + 10 months.
+        if (customer.createdAt) {
+            const creationDate = new Date(customer.createdAt);
+            creationDate.setMonth(creationDate.getMonth() + 10);
+            return creationDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        
+        return 'N/A'; // Fallback if no date is present
     };
     
     const getLastUpdatedDate = () => {
-        if(!customer.lastUpdatedAt?.seconds) return 'Not available';
-        return new Date(customer.lastUpdatedAt.seconds * 1000).toLocaleString('en-GB');
+        if(!customer.lastUpdatedAt) return 'Not available';
+        return new Date(customer.lastUpdatedAt).toLocaleString('en-GB');
     }
 
     return (
@@ -161,7 +166,7 @@ const ClientDashboard = ({ customer, onLogout }) => {
                              <button onClick={() => setPreviewFile(null)} className="text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6"/></button>
                         </div>
                         <div className="flex-grow p-2">
-                            {previewFile.url.endsWith('.jpg') ? (
+                            {previewFile.url.toLowerCase().endsWith('.jpg') ? (
                                 <img src={previewFile.url} alt="Document Preview" className="w-full h-full object-contain" />
                             ) : (
                                 <iframe src={previewFile.url} title="Document Preview" className="w-full h-full border-0"></iframe>
