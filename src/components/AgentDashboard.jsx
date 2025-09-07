@@ -4,7 +4,7 @@ import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore"
 import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
 import QRCode from 'qrcode.react';
 
-// --- (All SVG components and constants remain the same) ---
+// ... (All SVG components and constants remain the same) ...
 const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
 const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
 const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
@@ -68,7 +68,8 @@ export default function AgentDashboard({ onLogout }) {
             const newCustomerData = {
                 firstName: newCustomerFirstName.trim(),
                 lastName: newCustomerLastName.trim(),
-                lastName_lowercase: newCustomerLastName.trim().toLowerCase(),
+                // This is the crucial change for case-insensitivity
+                lastName_lowercase: newCustomerLastName.trim().toLowerCase(), 
                 referenceNumber: newCustomerRef,
                 documents: [],
                 createdAt: new Date().toISOString(),
@@ -170,7 +171,8 @@ export default function AgentDashboard({ onLogout }) {
         (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    const renderDashboard = () => (
+    // --- (The render functions remain the same) ---
+     const renderDashboard = () => (
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
@@ -275,14 +277,7 @@ export default function AgentDashboard({ onLogout }) {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                             <button onClick={() => handleCopy(clientPortalUrl, 'Link Copied!')} className="flex items-center justify-center w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><LinkIcon className="h-5 w-5 mr-2" />Copy Link</button>
-                             <button 
-                                onClick={() => handleCopy(
-                                    `Dear ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are now available in your secure client portal. Please use the details below to log in:\n\nWebsite: ${clientPortalUrl}\nReference Number: *${selectedCustomer.referenceNumber}*\nLast Name: *${selectedCustomer.lastName}*\n\nKind regards,\nThe Piyam Travel Team`,
-                                    'Details Copied!'
-                                )}
-                                className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors">
-                                <CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text
-                            </button>
+                            <button onClick={() => handleCopy( `Dear ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are now available in your secure client portal. Please use the details below to log in:\n\nWebsite: ${clientPortalUrl}\nReference Number: *${selectedCustomer.referenceNumber}*\nLast Name: *${selectedCustomer.lastName}*\n\nKind regards,\nThe Piyam Travel Team`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
                         </div>
                         {copySuccess && <p className="text-center text-green-600 font-semibold mt-4">{copySuccess}</p>}
                     </div>

@@ -28,7 +28,8 @@ export default async function handler(req, res) {
     // --- UPDATED QUERY LOGIC ---
     const q = customersRef
       .where('referenceNumber', '==', `PT-${referenceNumber.trim().toUpperCase()}`)
-      .where('lastName_lowercase', '==', lastName.trim().toLowerCase()); // Search the lowercase field
+      // This is the crucial change for case-insensitivity
+      .where('lastName_lowercase', '==', lastName.trim().toLowerCase()); 
       
     const querySnapshot = await q.get();
 
