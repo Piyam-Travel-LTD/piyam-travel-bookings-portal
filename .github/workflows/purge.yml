@@ -1,0 +1,28 @@
+# This is a GitHub Actions workflow file.
+# It defines an automated, scheduled task for your project.
+
+name: Weekly Folder Purge
+
+# This section controls when the task runs.
+on:
+  schedule:
+    # This is a CRON expression that means "at 2:00 AM every Sunday".
+    # Vercel's resources are often lowest at this time.
+    - cron: '0 2 * * 0'
+  # This also allows you to run the job manually from the GitHub Actions tab if needed.
+  workflow_dispatch:
+
+jobs:
+  purge-old-folders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the purge API endpoint
+        # This command securely calls your Vercel backend function.
+        # It uses the CRON_SECRET you created to prove that the request is authorized.
+        run: |
+          curl --request POST \
+          --url 'https://bookings.piyamtravel.com/api/purge-old-folders' \
+          --header 'Authorization: Bearer ${{ secrets.CRON_SECRET }}'
+        env:
+          # We need to create a secret in GitHub to match the one in Vercel.
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
