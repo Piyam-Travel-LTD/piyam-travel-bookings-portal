@@ -4,18 +4,18 @@ import { collection, getDocs, addDoc, doc, updateDoc, serverTimestamp } from "fi
 import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
 import QRCode from 'qrcode.react';
 
-// --- (SVG Icons: Added Archive/Unarchive and Notes icons) ---
-const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
-const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
-const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
-const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
-const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
-const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
-const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
-const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
-const TrashIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> );
-const ArchiveIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>);
-const NotesIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>);
+// --- (All SVG components remain the same) ---
+const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
+const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
+const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
+const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
+const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
+const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
+const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
+const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
+const TrashIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> );
+const ArchiveIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>);
+const NotesIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>);
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
@@ -28,6 +28,7 @@ export default function AgentDashboard({ onLogout }) {
     const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+    const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [newCustomerFirstName, setNewCustomerFirstName] = useState('');
     const [newCustomerLastName, setNewCustomerLastName] = useState('');
@@ -42,11 +43,6 @@ export default function AgentDashboard({ onLogout }) {
         const updatedCustomers = customers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c);
         setCustomers(updatedCustomers);
         setSelectedCustomer(updatedCustomer);
-    };
-
-    const updateLastUpdated = async (customerId) => {
-        const customerDocRef = doc(db, "customers", customerId);
-        await updateDoc(customerDocRef, { lastUpdatedAt: serverTimestamp() });
     };
 
     useEffect(() => {
@@ -176,11 +172,18 @@ export default function AgentDashboard({ onLogout }) {
         updateCustomerState({ ...selectedCustomer, status: newStatus, lastUpdatedAt: { toDate: () => new Date() } });
     };
 
-    const handleExtendAccess = async () => {
+    const handleExtendAccess = async (months) => {
+        const newExpiryDate = new Date();
+        newExpiryDate.setMonth(newExpiryDate.getMonth() + months);
+        
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
-        await updateDoc(customerDocRef, { createdAt: serverTimestamp(), lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, createdAt: { toDate: () => new Date() }, lastUpdatedAt: { toDate: () => new Date() }});
-        alert('Customer access has been extended for another 10 months from today.');
+        await updateDoc(customerDocRef, { 
+            accessExpiresAt: newExpiryDate, 
+            lastUpdatedAt: serverTimestamp() 
+        });
+        updateCustomerState({ ...selectedCustomer, accessExpiresAt: { toDate: () => newExpiryDate }, lastUpdatedAt: { toDate: () => new Date() }});
+        setIsExtendModalOpen(false);
+        alert(`Customer access has been extended until ${newExpiryDate.toLocaleDateString()}.`);
     };
 
     const handleToggleArchive = async () => {
@@ -217,6 +220,7 @@ export default function AgentDashboard({ onLogout }) {
     );
     
     const renderDashboard = () => (
+        // ... (renderDashboard JSX remains the same)
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
@@ -293,7 +297,7 @@ export default function AgentDashboard({ onLogout }) {
                      <h3 className="text-lg font-semibold text-gray-800">Folder Management</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <button onClick={handleToggleStatus} className={`font-semibold py-2 px-4 rounded-lg transition-colors ${selectedCustomer.status === 'Completed' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-green-100 text-green-800 hover:bg-green-200'}`}>{selectedCustomer.status === 'Completed' ? 'Mark as In Progress' : 'Mark as Completed'}</button>
-                        <button onClick={handleExtendAccess} className="bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend Access</button>
+                        <button onClick={() => setIsExtendModalOpen(true)} className="bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend Access</button>
                         <button onClick={handleToggleArchive} className="flex items-center justify-center bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><ArchiveIcon/>{selectedCustomer.isArchived ? 'Unarchive Folder' : 'Archive Folder'}</button>
                     </div>
                 </div>
@@ -306,9 +310,11 @@ export default function AgentDashboard({ onLogout }) {
      return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
+            {/* --- Modals --- */}
             {isCreateModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                    {/* ... Create Folder Modal JSX ... */}
+                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Create New Customer Folder</h2>
                         <p className="text-gray-500 mb-6">A unique reference number will be generated.</p>
                         <div className="space-y-4">
@@ -322,7 +328,8 @@ export default function AgentDashboard({ onLogout }) {
             )}
             {isVoucherModalOpen && selectedCustomer && (
                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
+                    {/* ... Voucher Modal JSX ... */}
+                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
                         <button onClick={() => setIsVoucherModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6"/></button>
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Share Customer Access</h2>
                         <p className="text-gray-500 mb-6">Share these details with your customer to access their portal.</p>
@@ -352,6 +359,7 @@ export default function AgentDashboard({ onLogout }) {
             )}
             {isDeleteModalOpen && selectedCustomer && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    {/* ... Delete Folder Modal JSX ... */}
                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
                         <h2 className="text-2xl font-bold text-red-800 mb-2">Delete Customer Folder</h2>
                         <p className="text-gray-600 mb-4">This action is permanent and cannot be undone. All associated documents will be deleted from storage.</p>
@@ -366,7 +374,8 @@ export default function AgentDashboard({ onLogout }) {
             )}
             {isNotesModalOpen && selectedCustomer && (
                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg flex flex-col h-[70vh]">
+                    {/* ... Notes Modal JSX ... */}
+                     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg flex flex-col h-[70vh]">
                         <div className="flex-shrink-0"><h2 className="text-2xl font-bold text-gray-800 mb-2">Internal Notes</h2><p className="text-gray-500 mb-4">For agent use only. Notes are saved automatically.</p></div>
                         <div className="flex-grow bg-gray-50 rounded-lg p-4 overflow-y-auto mb-4">
                             {(selectedCustomer.notes || []).length > 0 ? (
@@ -383,6 +392,22 @@ export default function AgentDashboard({ onLogout }) {
                             <button onClick={handleAddNote} className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors">Add Note</button>
                         </div>
                          <button onClick={() => setIsNotesModalOpen(false)} className="w-full mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Close</button>
+                    </div>
+                </div>
+            )}
+            {isExtendModalOpen && selectedCustomer && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">Extend Customer Access</h2>
+                        <p className="text-gray-600 mb-6">Select a new access duration from today. The current 10-month expiry based on creation date will be overridden.</p>
+                        <div className="flex flex-col gap-4">
+                            <button onClick={() => handleExtendAccess(1)} className="w-full bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend for 1 Month</button>
+                            <button onClick={() => handleExtendAccess(3)} className="w-full bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend for 3 Months</button>
+                            <button onClick={() => handleExtendAccess(6)} className="w-full bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend for 6 Months</button>
+                        </div>
+                        <div className="flex justify-end mt-6">
+                             <button onClick={() => setIsExtendModalOpen(false)} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                        </div>
                     </div>
                 </div>
             )}
