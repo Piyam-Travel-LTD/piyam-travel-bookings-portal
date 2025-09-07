@@ -46,7 +46,7 @@ export default async function handler(req, res) {
 
     // --- THIS IS THE CRUCIAL FIX ---
     // We manually translate the Firestore Timestamps into a universal format (ISO string)
-    // before sending the data to the client.
+    // before sending the data to the client. This prevents any data format errors.
     const finalData = {
       ...customerData,
       id: doc.id,
