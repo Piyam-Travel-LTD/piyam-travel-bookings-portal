@@ -38,7 +38,6 @@ export default async function handler(req, res) {
   const customerDocRef = db.collection('customers').doc(customerId);
 
   try {
-    // Step 1: Get the customer's document to find their files
     const customerDoc = await customerDocRef.get();
     if (!customerDoc.exists) {
       return res.status(404).json({ error: 'Customer not found.' });
@@ -46,24 +45,20 @@ export default async function handler(req, res) {
     const customerData = customerDoc.data();
     const documents = customerData.documents || [];
 
-    // Step 2: If there are files, delete them from Cloudflare R2
     if (documents.length > 0) {
-      const objectsToDelete = documents.map(doc => ({ Key: doc.fileKey }));
+      const objectsToDelete = documents.map(doc => ({ Key: doc.fileKey })).filter(obj => obj.Key);
       
-      const deleteCommand = new DeleteObjectsCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Delete: {
-          Objects: objectsToDelete,
-          Quiet: false,
-        },
-      });
-      await s3.send(deleteCommand);
+      if (objectsToDelete.length > 0) {
+        const deleteCommand = new DeleteObjectsCommand({
+          Bucket: process.env.R2_BUCKET_NAME,
+          Delete: { Objects: objectsToDelete, Quiet: false },
+        });
+        await s3.send(deleteCommand);
+      }
     }
 
-    // Step 3: After files are deleted from R2, delete the customer document from Firestore
     await customerDocRef.delete();
-
-    res.status(200).json({ success: true, message: 'Customer folder and all associated files deleted successfully.' });
+    res.status(200).json({ success: true, message: 'Customer folder deleted.' });
 
   } catch (error) {
     console.error('Error deleting customer folder:', error);
