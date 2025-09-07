@@ -101,7 +101,6 @@ export default function AgentDashboard({ onLogout }) {
     };
     
     const handleFileChange = async (event) => {
-        // ... (file upload logic remains the same)
         const file = event.target.files[0];
         if (!file || !selectedCustomer) return;
         setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Uploading...'}));
@@ -129,7 +128,7 @@ export default function AgentDashboard({ onLogout }) {
             const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
-            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
         } catch (error) {
             console.error("File upload process failed:", error);
@@ -139,7 +138,6 @@ export default function AgentDashboard({ onLogout }) {
     };
     
     const handleDeleteFile = async (fileToDelete) => {
-        // ... (file delete logic remains the same)
         if (!fileToDelete || !fileToDelete.fileKey) { console.error("Missing file key."); return; }
         try {
             await fetch('/api/delete-file', {
@@ -150,7 +148,7 @@ export default function AgentDashboard({ onLogout }) {
             const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
-            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
         } catch(error) { console.error("Error deleting file:", error); }
     };
 
@@ -166,20 +164,22 @@ export default function AgentDashboard({ onLogout }) {
             setSelectedCustomer(null);
             setIsDeleteModalOpen(false);
             setDeleteConfirmText('');
-        } catch (error) { console.error("Error deleting folder:", error); }
+        } catch (error) {
+            console.error("Error deleting folder:", error);
+        }
     };
 
     const handleToggleStatus = async () => {
         const newStatus = selectedCustomer.status === 'Completed' ? 'In Progress' : 'Completed';
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { status: newStatus, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, status: newStatus });
+        updateCustomerState({ ...selectedCustomer, status: newStatus, lastUpdatedAt: { toDate: () => new Date() } });
     };
 
     const handleExtendAccess = async () => {
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { createdAt: serverTimestamp(), lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, createdAt: { toDate: () => new Date() }});
+        updateCustomerState({ ...selectedCustomer, createdAt: { toDate: () => new Date() }, lastUpdatedAt: { toDate: () => new Date() }});
         alert('Customer access has been extended for another 10 months from today.');
     };
 
@@ -187,7 +187,7 @@ export default function AgentDashboard({ onLogout }) {
         const newArchiveStatus = !selectedCustomer.isArchived;
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { isArchived: newArchiveStatus, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, isArchived: newArchiveStatus });
+        updateCustomerState({ ...selectedCustomer, isArchived: newArchiveStatus, lastUpdatedAt: { toDate: () => new Date() } });
     };
 
     const handleAddNote = async () => {
@@ -200,7 +200,7 @@ export default function AgentDashboard({ onLogout }) {
         const updatedNotes = [...(selectedCustomer.notes || []), note];
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { notes: updatedNotes, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, notes: updatedNotes });
+        updateCustomerState({ ...selectedCustomer, notes: updatedNotes, lastUpdatedAt: { toDate: () => new Date() } });
         setNewNote('');
     };
 
@@ -216,7 +216,6 @@ export default function AgentDashboard({ onLogout }) {
             (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     
-    // ... (render functions updated with new features)
     const renderDashboard = () => (
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -299,7 +298,7 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                 </div>
                  <div className="mt-4 text-center text-xs text-gray-400">
-                    Last Updated: {selectedCustomer.lastUpdatedAt ? new Date(selectedCustomer.lastUpdatedAt.seconds * 1000).toLocaleString() : 'N/A'}
+                    Last Updated: {selectedCustomer.lastUpdatedAt?.toDate().toLocaleString() || 'N/A'}
                 </div>
             </div>
         );
@@ -345,7 +344,7 @@ export default function AgentDashboard({ onLogout }) {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                             <button onClick={() => handleCopy(clientPortalUrl, 'Link Copied!')} className="flex items-center justify-center w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><LinkIcon className="h-5 w-5 mr-2" />Copy Link</button>
-                            <button onClick={() => handleCopy( `Dear ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are now available in your secure client portal. Please use the details below to log in:\n\nWebsite: ${clientPortalUrl}\nReference Number: *${selectedCustomer.referenceNumber}*\nLast Name: *${selectedCustomer.lastName}*\n\nKind regards,\nThe Piyam Travel Team`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
+                            <button onClick={() => handleCopy( `Dear ${selectedCustomer.firstName} ${selectedCustomer.lastName},\n\nYour travel documents are now available...`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
                         </div>
                         {copySuccess && <p className="text-center text-green-600 font-semibold mt-4">{copySuccess}</p>}
                     </div>
