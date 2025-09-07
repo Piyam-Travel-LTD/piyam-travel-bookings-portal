@@ -33,6 +33,7 @@ export default async function handler(req, res) {
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
     const customersRef = db.collection('customers');
+    // Query for folders where the original creation date is older than 12 months
     const q = customersRef.where('createdAt', '<', twelveMonthsAgo);
     
     const querySnapshot = await q.get();
