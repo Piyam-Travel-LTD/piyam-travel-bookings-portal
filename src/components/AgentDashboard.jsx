@@ -1,19 +1,21 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
 import QRCode from 'qrcode.react';
 
-// ... (All SVG components and constants remain the same) ...
-const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
-const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
-const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
-const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
-const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
-const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
-const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
-const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
-const TrashIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> );
+// --- (SVG Icons: Added Archive/Unarchive and Notes icons) ---
+const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
+const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
+const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
+const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
+const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
+const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
+const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
+const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
+const TrashIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> );
+const ArchiveIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>);
+const NotesIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>);
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
@@ -25,13 +27,27 @@ export default function AgentDashboard({ onLogout }) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [newCustomerFirstName, setNewCustomerFirstName] = useState('');
     const [newCustomerLastName, setNewCustomerLastName] = useState('');
+    const [newNote, setNewNote] = useState('');
     const [copySuccess, setCopySuccess] = useState('');
     const fileInputRef = useRef(null);
     const [currentUploadCategory, setCurrentUploadCategory] = useState('');
     const [uploadingStatus, setUploadingStatus] = useState({});
+    const [showArchived, setShowArchived] = useState(false);
+
+    const updateCustomerState = (updatedCustomer) => {
+        const updatedCustomers = customers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c);
+        setCustomers(updatedCustomers);
+        setSelectedCustomer(updatedCustomer);
+    };
+
+    const updateLastUpdated = async (customerId) => {
+        const customerDocRef = doc(db, "customers", customerId);
+        await updateDoc(customerDocRef, { lastUpdatedAt: serverTimestamp() });
+    };
 
     useEffect(() => {
         const fetchCustomers = async () => {
@@ -56,12 +72,7 @@ export default function AgentDashboard({ onLogout }) {
 
     const newCustomerRef = useMemo(() => generateRefNum(), [isCreateModalOpen]);
 
-    const handleCopy = (textToCopy, message) => {
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            setCopySuccess(message);
-            setTimeout(() => setCopySuccess(''), 2000);
-        });
-    };
+    const handleCopy = (textToCopy, message) => { navigator.clipboard.writeText(textToCopy).then(() => { setCopySuccess(message); setTimeout(() => setCopySuccess(''), 2000); }); };
 
     const handleCreateCustomer = async () => {
         if (newCustomerFirstName.trim() && newCustomerLastName.trim()) {
@@ -71,7 +82,11 @@ export default function AgentDashboard({ onLogout }) {
                 lastName_lowercase: newCustomerLastName.trim().toLowerCase(),
                 referenceNumber: newCustomerRef,
                 documents: [],
-                createdAt: new Date().toISOString(),
+                notes: [],
+                status: 'In Progress',
+                isArchived: false,
+                createdAt: serverTimestamp(),
+                lastUpdatedAt: serverTimestamp(),
             };
             try {
                 const docRef = await addDoc(collection(db, "customers"), newCustomerData);
@@ -86,6 +101,7 @@ export default function AgentDashboard({ onLogout }) {
     };
     
     const handleFileChange = async (event) => {
+        // ... (file upload logic remains the same)
         const file = event.target.files[0];
         if (!file || !selectedCustomer) return;
         setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Uploading...'}));
@@ -112,12 +128,9 @@ export default function AgentDashboard({ onLogout }) {
             };
             const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
-            await updateDoc(customerDocRef, { documents: updatedDocuments });
-            const updatedCustomer = { ...selectedCustomer, documents: updatedDocuments };
-            const updatedCustomers = customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c);
-            setCustomers(updatedCustomers);
-            setSelectedCustomer(updatedCustomer);
-             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
+            await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments });
+            setUploadingStatus(prev => ({...prev, [currentUploadCategory]: ''}));
         } catch (error) {
             console.error("File upload process failed:", error);
             setUploadingStatus(prev => ({...prev, [currentUploadCategory]: 'Upload Failed!'}));
@@ -126,6 +139,7 @@ export default function AgentDashboard({ onLogout }) {
     };
     
     const handleDeleteFile = async (fileToDelete) => {
+        // ... (file delete logic remains the same)
         if (!fileToDelete || !fileToDelete.fileKey) { console.error("Missing file key."); return; }
         try {
             await fetch('/api/delete-file', {
@@ -135,11 +149,8 @@ export default function AgentDashboard({ onLogout }) {
             });
             const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
-            await updateDoc(customerDocRef, { documents: updatedDocuments });
-            const updatedCustomer = { ...selectedCustomer, documents: updatedDocuments };
-            const updatedCustomers = customers.map(c => c.id === selectedCustomer.id ? updatedCustomer : c);
-            setCustomers(updatedCustomers);
-            setSelectedCustomer(updatedCustomer);
+            await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments });
         } catch(error) { console.error("Error deleting file:", error); }
     };
 
@@ -155,9 +166,42 @@ export default function AgentDashboard({ onLogout }) {
             setSelectedCustomer(null);
             setIsDeleteModalOpen(false);
             setDeleteConfirmText('');
-        } catch (error) {
-            console.error("Error deleting folder:", error);
-        }
+        } catch (error) { console.error("Error deleting folder:", error); }
+    };
+
+    const handleToggleStatus = async () => {
+        const newStatus = selectedCustomer.status === 'Completed' ? 'In Progress' : 'Completed';
+        const customerDocRef = doc(db, "customers", selectedCustomer.id);
+        await updateDoc(customerDocRef, { status: newStatus, lastUpdatedAt: serverTimestamp() });
+        updateCustomerState({ ...selectedCustomer, status: newStatus });
+    };
+
+    const handleExtendAccess = async () => {
+        const customerDocRef = doc(db, "customers", selectedCustomer.id);
+        await updateDoc(customerDocRef, { createdAt: serverTimestamp(), lastUpdatedAt: serverTimestamp() });
+        updateCustomerState({ ...selectedCustomer, createdAt: { toDate: () => new Date() }});
+        alert('Customer access has been extended for another 10 months from today.');
+    };
+
+    const handleToggleArchive = async () => {
+        const newArchiveStatus = !selectedCustomer.isArchived;
+        const customerDocRef = doc(db, "customers", selectedCustomer.id);
+        await updateDoc(customerDocRef, { isArchived: newArchiveStatus, lastUpdatedAt: serverTimestamp() });
+        updateCustomerState({ ...selectedCustomer, isArchived: newArchiveStatus });
+    };
+
+    const handleAddNote = async () => {
+        if (!newNote.trim()) return;
+        const note = {
+            text: newNote.trim(),
+            timestamp: new Date().toISOString(),
+            agent: 'Agent Name' // In a real app, this would be the logged-in agent's name
+        };
+        const updatedNotes = [...(selectedCustomer.notes || []), note];
+        const customerDocRef = doc(db, "customers", selectedCustomer.id);
+        await updateDoc(customerDocRef, { notes: updatedNotes, lastUpdatedAt: serverTimestamp() });
+        updateCustomerState({ ...selectedCustomer, notes: updatedNotes });
+        setNewNote('');
     };
 
     const handleUploadButtonClick = (category) => {
@@ -165,13 +209,15 @@ export default function AgentDashboard({ onLogout }) {
         fileInputRef.current.click();
     };
 
-    const filteredCustomers = customers.filter(customer =>
-        `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filteredCustomers = customers
+        .filter(customer => showArchived ? true : !customer.isArchived)
+        .filter(customer =>
+            `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-
-    // --- (The render functions remain the same) ---
-     const renderDashboard = () => (
+    
+    // ... (render functions updated with new features)
+    const renderDashboard = () => (
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
@@ -180,17 +226,23 @@ export default function AgentDashboard({ onLogout }) {
                     <button onClick={onLogout} className="flex items-center justify-center bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-500 transition-colors"><LogOutIcon/>Sign Out</button>
                 </div>
             </div>
-            <div className="relative mb-6">
-                <input type="text" placeholder="Search by name or reference number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-red-800 focus:border-red-800" />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><SearchIcon /></div>
+            <div className="flex justify-between items-center mb-6">
+                <div className="relative flex-grow">
+                    <input type="text" placeholder="Search by name or reference number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-red-800 focus:border-red-800" />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><SearchIcon /></div>
+                </div>
+                <label className="ml-4 flex items-center cursor-pointer">
+                    <input type="checkbox" checked={showArchived} onChange={() => setShowArchived(!showArchived)} className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500" />
+                    <span className="ml-2 text-sm text-gray-600">Show Archived</span>
+                </label>
             </div>
             {isLoading ? <p className="text-center text-gray-500">Loading customers...</p> : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {filteredCustomers.map(customer => (
-                    <div key={customer.id} onClick={() => setSelectedCustomer(customer)} className="bg-gray-50 aspect-square p-4 rounded-lg border border-gray-200 hover:border-red-800 hover:bg-red-50 cursor-pointer transition-all flex flex-col items-center justify-center text-center">
+                    <div key={customer.id} onClick={() => setSelectedCustomer(customer)} className={`aspect-square p-4 rounded-lg border hover:border-red-800 cursor-pointer transition-all flex flex-col items-center justify-center text-center ${customer.isArchived ? 'bg-gray-200 border-gray-300' : 'bg-gray-50 border-gray-200 hover:bg-red-50'}`}>
                         <p className="font-bold text-lg text-gray-800 break-words">{customer.firstName} {customer.lastName}</p>
                         <p className="text-sm text-gray-500 mt-1">{customer.referenceNumber}</p>
-                        <p className="text-xs text-gray-400 mt-2">{customer.documents?.length || 0} document(s)</p>
+                        {customer.status === 'Completed' && <span className="mt-2 text-xs font-bold text-green-800 bg-green-200 px-2 py-1 rounded-full">Completed</span>}
                     </div>
                 ))}
             </div>
@@ -204,20 +256,26 @@ export default function AgentDashboard({ onLogout }) {
             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
                 <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
                 <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
-                    <div><h1 className="text-3xl font-bold text-gray-800">{selectedCustomer.firstName} {selectedCustomer.lastName}</h1><p className="text-gray-500 mt-1 font-mono">{selectedCustomer.referenceNumber}</p></div>
-                    <div className="flex gap-2">
-                        <button onClick={() => setIsVoucherModalOpen(true)} className="w-full md:w-auto bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Generate Access Voucher</button>
+                    <div>
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-3xl font-bold text-gray-800">{selectedCustomer.firstName} {selectedCustomer.lastName}</h1>
+                            {selectedCustomer.status === 'Completed' && <span className="text-sm font-bold text-green-800 bg-green-200 px-3 py-1 rounded-full">Completed</span>}
+                        </div>
+                        <p className="text-gray-500 mt-1 font-mono">{selectedCustomer.referenceNumber}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button onClick={() => setIsNotesModalOpen(true)} className="flex items-center justify-center bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><NotesIcon/>Internal Notes</button>
+                        <button onClick={() => setIsVoucherModalOpen(true)} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Generate Access Voucher</button>
                         <button onClick={() => setIsDeleteModalOpen(true)} className="flex items-center justify-center bg-red-100 text-red-800 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition-colors"><TrashIcon/>Delete Folder</button>
                     </div>
                 </div>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {fileCategories.map(category => {
-                        const filesInCategory = customerDocs.filter(doc => doc.category === category.name);
+                         const filesInCategory = customerDocs.filter(doc => doc.category === category.name);
                         return (
                             <div key={category.name} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col">
                                 <h3 className="font-bold text-lg mb-3">{category.icon} {category.name}</h3>
-                                <div className="space-y-2 flex-grow">
+                                <div className="space-y-2 flex-grow min-h-[50px]">
                                     {filesInCategory.length > 0 ? (
                                         filesInCategory.map(file => (
                                             <div key={file.id} className="bg-white p-2 rounded-md border flex justify-between items-center text-sm">
@@ -225,12 +283,23 @@ export default function AgentDashboard({ onLogout }) {
                                                 <button onClick={() => handleDeleteFile(file)} className="text-gray-400 hover:text-red-600 flex-shrink-0 ml-2"><XIcon className="h-4 w-4"/></button>
                                             </div>
                                         ))
-                                    ) : ( <p className="text-sm text-gray-400 italic">No documents uploaded yet.</p> )}
+                                    ) : ( <p className="text-sm text-gray-400 italic">No documents uploaded.</p> )}
                                 </div>
                                  <button onClick={() => handleUploadButtonClick(category.name)} disabled={!!uploadingStatus[category.name]} className="w-full mt-4 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm disabled:bg-gray-200 disabled:cursor-not-allowed">{uploadingStatus[category.name] || 'Upload File'}</button>
                             </div>
                         )
                     })}
+                </div>
+                <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
+                     <h3 className="text-lg font-semibold text-gray-800">Folder Management</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button onClick={handleToggleStatus} className={`font-semibold py-2 px-4 rounded-lg transition-colors ${selectedCustomer.status === 'Completed' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-green-100 text-green-800 hover:bg-green-200'}`}>{selectedCustomer.status === 'Completed' ? 'Mark as In Progress' : 'Mark as Completed'}</button>
+                        <button onClick={handleExtendAccess} className="bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend Access</button>
+                        <button onClick={handleToggleArchive} className="flex items-center justify-center bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><ArchiveIcon/>{selectedCustomer.isArchived ? 'Unarchive Folder' : 'Archive Folder'}</button>
+                    </div>
+                </div>
+                 <div className="mt-4 text-center text-xs text-gray-400">
+                    Last Updated: {selectedCustomer.lastUpdatedAt ? new Date(selectedCustomer.lastUpdatedAt.seconds * 1000).toLocaleString() : 'N/A'}
                 </div>
             </div>
         );
@@ -288,21 +357,33 @@ export default function AgentDashboard({ onLogout }) {
                         <h2 className="text-2xl font-bold text-red-800 mb-2">Delete Customer Folder</h2>
                         <p className="text-gray-600 mb-4">This action is permanent and cannot be undone. All associated documents will be deleted from storage.</p>
                         <p className="text-sm text-gray-700">To confirm, please type **Delete** in the box below.</p>
-                        <input 
-                            type="text" 
-                            value={deleteConfirmText}
-                            onChange={(e) => setDeleteConfirmText(e.target.value)}
-                            className="mt-2 w-full border border-gray-300 rounded-lg p-2 focus:ring-red-800 focus:border-red-800" 
-                        />
+                        <input type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} className="mt-2 w-full border border-gray-300 rounded-lg p-2 focus:ring-red-800 focus:border-red-800" />
                         <div className="flex justify-end gap-4 mt-6">
                             <button onClick={() => setIsDeleteModalOpen(false)} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
-                            <button 
-                                onClick={handleDeleteFolder} 
-                                disabled={deleteConfirmText !== 'Delete'}
-                                className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed">
-                                Permanently Delete
-                            </button>
+                            <button onClick={handleDeleteFolder} disabled={deleteConfirmText !== 'Delete'} className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed">Permanently Delete</button>
                         </div>
+                    </div>
+                </div>
+            )}
+            {isNotesModalOpen && selectedCustomer && (
+                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg flex flex-col h-[70vh]">
+                        <div className="flex-shrink-0"><h2 className="text-2xl font-bold text-gray-800 mb-2">Internal Notes</h2><p className="text-gray-500 mb-4">For agent use only. Notes are saved automatically.</p></div>
+                        <div className="flex-grow bg-gray-50 rounded-lg p-4 overflow-y-auto mb-4">
+                            {(selectedCustomer.notes || []).length > 0 ? (
+                                (selectedCustomer.notes || []).map(note => (
+                                    <div key={note.timestamp} className="mb-4">
+                                        <p className="text-xs text-gray-400">{new Date(note.timestamp).toLocaleString()}</p>
+                                        <p className="text-gray-700 bg-white p-3 rounded-lg">{note.text}</p>
+                                    </div>
+                                ))
+                            ) : (<p className="text-center text-gray-500 italic">No notes yet.</p>)}
+                        </div>
+                        <div className="flex-shrink-0 flex gap-4">
+                            <input type="text" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Type a new note..." className="flex-grow w-full border border-gray-300 rounded-lg p-2 focus:ring-red-800 focus:border-red-800" />
+                            <button onClick={handleAddNote} className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors">Add Note</button>
+                        </div>
+                         <button onClick={() => setIsNotesModalOpen(false)} className="w-full mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Close</button>
                     </div>
                 </div>
             )}
