@@ -25,7 +25,6 @@ export default async function handler(req, res) {
 
   try {
     const customersRef = db.collection('customers');
-    // --- UPDATED QUERY LOGIC ---
     const q = customersRef
       .where('referenceNumber', '==', `PT-${referenceNumber.trim().toUpperCase()}`)
       // This is the crucial change for case-insensitivity
