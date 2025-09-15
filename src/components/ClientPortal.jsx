@@ -3,14 +3,13 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { piyamTravelLogoBase64 } from '../data';
 
-// --- (All SVG and other components remain the same) ---
+// --- (SVG Icons and ClientLoginPage remain the same) ---
 const UserIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> );
 const FingerprintIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 10a2 2 0 0 0-2 2c0 1.02.5 2.51 2 4 .5-1.5.5-2.5 2-4a2 2 0 0 0-2-2Z"/><path d="M12 2a10 10 0 0 0-10 10c0 4.4 3.6 10 10 10s10-5.6 10-10A10 10 0 0 0 12 2Z"/></svg> );
 const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
 const DownloadIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> );
 const InfoIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> );
 const PreviewIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>);
-const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
 const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo"/> );
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
@@ -27,17 +26,23 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/lookup-customer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ referenceNumber: refNumber, lastName }),
-            });
-            const data = await response.json();
-            if (!response.ok) { throw new Error(data.error || 'Customer not found.'); }
-            onLogin(data);
+            const customersRef = collection(db, "customers");
+            const q = query(customersRef, 
+                where("referenceNumber", "==", `PT-${refNumber.trim().toUpperCase()}`), 
+                where("lastName_lowercase", "==", lastName.trim().toLowerCase())
+            );
+
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                setError('Invalid reference number or last name. Please try again.');
+            } else {
+                const customerData = querySnapshot.docs[0].data();
+                onLogin({ id: querySnapshot.docs[0].id, ...customerData });
+            }
         } catch (err) {
             console.error("Login error:", err);
-            setError(err.message || 'An error occurred. Please try again.');
+            setError("An error occurred. Please check your connection and try again.");
         } finally {
             setIsLoading(false);
         }
@@ -73,35 +78,30 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
 };
 
 const ClientDashboard = ({ customer, onLogout }) => {
+    // ... (This component is updated to show the itinerary)
     const [previewFile, setPreviewFile] = useState(null);
-    
     const visibleCategories = fileCategories.filter(category => 
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
 
-    // --- THIS FUNCTION IS NOW CORRECTED TO HANDLE ALL DATE FORMATS ---
     const getExpiryDate = () => {
-        // Priority 1: Use the specific extension date if it exists.
-        // The API sends this as a universal ISO string.
+        const dateToUse = customer.accessExpiresAt || customer.createdAt;
+        if (!dateToUse?.seconds) return 'N/A';
+        const expiryBaseDate = new Date(dateToUse.seconds * 1000);
         if (customer.accessExpiresAt) {
-            const expiryDate = new Date(customer.accessExpiresAt);
-            return expiryDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+             return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        } else {
+            expiryBaseDate.setMonth(expiryBaseDate.getMonth() + 10);
+            return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         }
-        
-        // Priority 2: Fallback to the original creation date + 10 months.
-        if (customer.createdAt) {
-            const creationDate = new Date(customer.createdAt);
-            creationDate.setMonth(creationDate.getMonth() + 10);
-            return creationDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        }
-        
-        return 'N/A'; // Fallback if no date is present
     };
     
     const getLastUpdatedDate = () => {
-        if(!customer.lastUpdatedAt) return 'Not available';
-        return new Date(customer.lastUpdatedAt).toLocaleString('en-GB');
+        if(!customer.lastUpdatedAt?.seconds) return 'Not available';
+        return new Date(customer.lastUpdatedAt.seconds * 1000).toLocaleString('en-GB');
     }
+    
+    const keyInfo = customer.keyInformation;
 
     return (
         <>
@@ -112,18 +112,29 @@ const ClientDashboard = ({ customer, onLogout }) => {
                             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Welcome, {customer.firstName} {customer.lastName}</h1>
                             {customer.status === 'Completed' && <span className="text-sm font-bold text-green-800 bg-green-200 px-3 py-1 rounded-full">Package Completed</span>}
                         </div>
+                         <p className="text-gray-600 mt-1 font-semibold">{customer.packageType} to {customer.destination}</p>
                         <p className="text-gray-500 mt-1 font-mono text-sm">Reference: {customer.referenceNumber}</p>
                         <p className="text-gray-500 mt-1 text-xs">Last Updated: {getLastUpdatedDate()}</p>
                     </div>
                     <button onClick={onLogout} className="w-full md:w-auto bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Log Out</button>
                 </div>
+
+                {keyInfo && (keyInfo.agentContact || keyInfo.groundContact || keyInfo.hotelAddress) && (
+                     <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <h3 className="text-lg font-bold text-yellow-900 mb-2">Key Information</h3>
+                        <div className="text-sm text-yellow-800 space-y-1">
+                            {keyInfo.agentContact && <p><strong>Your Contact:</strong> {keyInfo.agentContact}</p>}
+                            {keyInfo.groundContact && <p><strong>Ground Contact:</strong> {keyInfo.groundContact}</p>}
+                            {keyInfo.hotelAddress && <p><strong>First Hotel Address:</strong> {keyInfo.hotelAddress}</p>}
+                        </div>
+                    </div>
+                )}
                 
                 <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Documents</h2>
-
                 {visibleCategories.length > 0 ? (
                     <div className="space-y-6">
                         {visibleCategories.map(category => (
-                            <div key={category.name}>
+                             <div key={category.name}>
                                 <h3 className="font-bold text-lg mb-3">{category.icon} {category.name}</h3>
                                 <div className="space-y-2">
                                     {customer.documents.filter(doc => doc.category === category.name).map(file => (
@@ -146,9 +157,8 @@ const ClientDashboard = ({ customer, onLogout }) => {
                         ))}
                     </div>
                 ) : (
-                     <div className="text-center py-12"><p className="text-gray-500">No documents have been uploaded for you yet.</p><p className="text-gray-500 mt-2">Please check back later or contact your travel agent.</p></div>
+                     <div className="text-center py-12"><p className="text-gray-500">No documents have been uploaded for you yet.</p></div>
                 )}
-
                 <div className="mt-8 pt-4 border-t border-gray-200">
                     <div className="flex items-center justify-center text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
                         <InfoIcon className="h-5 w-5 mr-3 flex-shrink-0" />
@@ -156,8 +166,6 @@ const ClientDashboard = ({ customer, onLogout }) => {
                     </div>
                 </div>
             </div>
-
-            {/* --- Document Preview Modal --- */}
             {previewFile && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-2xl w-full h-full max-w-4xl max-h-[90vh] flex flex-col">
@@ -178,6 +186,7 @@ const ClientDashboard = ({ customer, onLogout }) => {
         </>
     );
 };
+
 
 export default function ClientPortal() {
     const [loggedInCustomer, setLoggedInCustomer] = useState(null);
