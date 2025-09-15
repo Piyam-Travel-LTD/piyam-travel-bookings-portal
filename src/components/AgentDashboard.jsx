@@ -62,12 +62,20 @@ export default function AgentDashboard({ onLogout }) {
     // --- THIS IS THE CORRECTED, ROBUST DATE FORMATTING FUNCTION ---
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return 'N/A';
-        // Handle both Firebase Timestamp objects and JS Date objects
-        if (timestamp.toDate) { 
+        // Handle Firebase Timestamp objects (which have a toDate method)
+        if (timestamp && typeof timestamp.toDate === 'function') {
             return timestamp.toDate().toLocaleString('en-GB');
         }
+        // Handle JS Date objects (from state updates)
         if (timestamp instanceof Date) {
             return timestamp.toLocaleString('en-GB');
+        }
+        // Handle ISO strings (from older data)
+        if (typeof timestamp === 'string') {
+            const date = new Date(timestamp);
+            if (!isNaN(date)) {
+                return date.toLocaleString('en-GB');
+            }
         }
         return 'Invalid Date';
     };
@@ -155,7 +163,7 @@ export default function AgentDashboard({ onLogout }) {
             const updatedDocuments = [...(selectedCustomer.documents || []), ...newDocuments];
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
-            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
         }
         if (failedUploads > 0) {
              setUploadingStatus(prev => ({...prev, [currentUploadCategory]: `${failedUploads} file(s) failed!`}));
@@ -171,7 +179,7 @@ export default function AgentDashboard({ onLogout }) {
              const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
-            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
             return;
         }
         try {
@@ -183,7 +191,7 @@ export default function AgentDashboard({ onLogout }) {
             const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
-            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
         } catch(error) { console.error("Error deleting file:", error); }
     };
 
@@ -208,7 +216,7 @@ export default function AgentDashboard({ onLogout }) {
         const newStatus = selectedCustomer.status === 'Completed' ? 'In Progress' : 'Completed';
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { status: newStatus, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, status: newStatus, lastUpdatedAt: { toDate: () => new Date() } });
+        updateCustomerState({ ...selectedCustomer, status: newStatus, lastUpdatedAt: new Date() });
     };
 
     const handleExtendAccess = async (months) => {
@@ -219,7 +227,7 @@ export default function AgentDashboard({ onLogout }) {
             accessExpiresAt: newExpiryDate, 
             lastUpdatedAt: serverTimestamp() 
         });
-        updateCustomerState({ ...selectedCustomer, accessExpiresAt: newExpiryDate, lastUpdatedAt: { toDate: () => new Date() }});
+        updateCustomerState({ ...selectedCustomer, accessExpiresAt: newExpiryDate, lastUpdatedAt: new Date()});
         setIsExtendModalOpen(false);
         alert(`Customer access has been extended until ${newExpiryDate.toLocaleDateString()}.`);
     };
@@ -228,7 +236,7 @@ export default function AgentDashboard({ onLogout }) {
         const newArchiveStatus = !selectedCustomer.isArchived;
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { isArchived: newArchiveStatus, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, isArchived: newArchiveStatus, lastUpdatedAt: { toDate: () => new Date() } });
+        updateCustomerState({ ...selectedCustomer, isArchived: newArchiveStatus, lastUpdatedAt: new Date() });
     };
 
     const handleAddNote = async () => {
@@ -241,14 +249,14 @@ export default function AgentDashboard({ onLogout }) {
         const updatedNotes = [...(selectedCustomer.notes || []), note];
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { notes: updatedNotes, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, notes: updatedNotes, lastUpdatedAt: { toDate: () => new Date() } });
+        updateCustomerState({ ...selectedCustomer, notes: updatedNotes, lastUpdatedAt: new Date() });
         setNewNote('');
     };
     
     const handleUpdateKeyInfo = async () => {
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { keyInformation: keyInfo, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, keyInformation: keyInfo, lastUpdatedAt: { toDate: () => new Date() } });
+        updateCustomerState({ ...selectedCustomer, keyInformation: keyInfo, lastUpdatedAt: new Date() });
         alert("Key information saved!");
     };
     
@@ -258,7 +266,7 @@ export default function AgentDashboard({ onLogout }) {
         const updatedChecklist = [...(selectedCustomer.checklist || []), item];
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { checklist: updatedChecklist, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, checklist: updatedChecklist, lastUpdatedAt: { toDate: () => new Date() } });
+        updateCustomerState({ ...selectedCustomer, checklist: updatedChecklist, lastUpdatedAt: new Date() });
         setNewChecklistItem('');
     };
 
@@ -266,7 +274,7 @@ export default function AgentDashboard({ onLogout }) {
         const updatedChecklist = selectedCustomer.checklist.filter(item => item.id !== itemId);
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { checklist: updatedChecklist, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, checklist: updatedChecklist, lastUpdatedAt: { toDate: () => new Date() } });
+        updateCustomerState({ ...selectedCustomer, checklist: updatedChecklist, lastUpdatedAt: new Date() });
     };
 
     const handleQuickAdd = async (templateDoc) => {
@@ -280,7 +288,7 @@ export default function AgentDashboard({ onLogout }) {
         const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
-        updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
+        updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
     };
 
     const handleUploadButtonClick = (category) => {
@@ -395,7 +403,6 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                  </div>
                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {fileCategories.map(category => {
                          const filesInCategory = customerDocs.filter(doc => doc.category === category.name);
@@ -432,7 +439,6 @@ export default function AgentDashboard({ onLogout }) {
         );
     }
     
-    // --- THIS IS THE CORRECTED RETURN STATEMENT ---
     return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
             <input
@@ -443,9 +449,7 @@ export default function AgentDashboard({ onLogout }) {
                 accept=".pdf,.jpg"
                 multiple
             />
-
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
-
             <CreateFolderModal 
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
