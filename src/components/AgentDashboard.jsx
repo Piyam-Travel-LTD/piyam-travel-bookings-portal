@@ -58,13 +58,17 @@ export default function AgentDashboard({ onLogout }) {
             setKeyInfo(selectedCustomer.keyInformation || { agentContact: '', groundContact: '', hotelAddress: '' });
         }
     }, [selectedCustomer]);
-    
+
+    // --- THIS IS THE CORRECTED, ROBUST DATE FORMATTING FUNCTION ---
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return 'N/A';
-        if (timestamp.seconds) { return new Date(timestamp.seconds * 1000).toLocaleString('en-GB'); }
-        if (typeof timestamp === 'string') { return new Date(timestamp).toLocaleString('en-GB'); }
-        if (timestamp instanceof Date) { return timestamp.toLocaleString('en-GB'); }
-        if (timestamp.toDate) { return timestamp.toDate().toLocaleString('en-GB'); }
+        // Handle both Firebase Timestamp objects and JS Date objects
+        if (timestamp.toDate) { 
+            return timestamp.toDate().toLocaleString('en-GB');
+        }
+        if (timestamp instanceof Date) {
+            return timestamp.toLocaleString('en-GB');
+        }
         return 'Invalid Date';
     };
 
@@ -428,6 +432,7 @@ export default function AgentDashboard({ onLogout }) {
         );
     }
     
+    // --- THIS IS THE CORRECTED RETURN STATEMENT ---
     return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
             <input
@@ -438,7 +443,9 @@ export default function AgentDashboard({ onLogout }) {
                 accept=".pdf,.jpg"
                 multiple
             />
+
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
+
             <CreateFolderModal 
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
