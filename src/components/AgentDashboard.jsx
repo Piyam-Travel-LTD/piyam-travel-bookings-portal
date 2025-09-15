@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { piyamTravelLogoBase64, clientPortalUrl, packageTypes, fileCategories } from '../data';
-import { templateDocuments } from '../templates'; // <-- IMPORT FROM NEW FILE
+import { templateDocuments } from '../templates.js'; // <-- This is the corrected import path
 import { SearchIcon, PlusIcon, ArrowLeftIcon, XIcon, FileIcon, LogOutIcon, TrashIcon, ArchiveIcon, NotesIcon } from './Icons';
 import CreateFolderModal from './modals/CreateFolderModal';
 import VoucherModal from './modals/VoucherModal';
@@ -293,7 +293,7 @@ export default function AgentDashboard({ onLogout }) {
             `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-    
+
     const renderDashboard = () => (
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -394,7 +394,6 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                  </div>
                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {fileCategories.map(category => {
                          const filesInCategory = customerDocs.filter(doc => doc.category === category.name);
@@ -431,7 +430,6 @@ export default function AgentDashboard({ onLogout }) {
         );
     }
     
-    // --- THIS IS THE CORRECTED RETURN STATEMENT ---
     return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
             <input
