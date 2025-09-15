@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { packageTypes, fileCategories, clientPortalUrl } from '../data';
+import { piyamTravelLogoBase64, clientPortalUrl, packageTypes, fileCategories } from '../data';
+import { templateDocuments } from '../templates'; // <-- IMPORT FROM NEW FILE
 import { SearchIcon, PlusIcon, ArrowLeftIcon, XIcon, FileIcon, LogOutIcon, TrashIcon, ArchiveIcon, NotesIcon } from './Icons';
 import CreateFolderModal from './modals/CreateFolderModal';
 import VoucherModal from './modals/VoucherModal';
@@ -58,24 +59,14 @@ export default function AgentDashboard({ onLogout }) {
             setKeyInfo(selectedCustomer.keyInformation || { agentContact: '', groundContact: '', hotelAddress: '' });
         }
     }, [selectedCustomer]);
-
-    // --- THIS IS THE CORRECTED, ROBUST DATE FORMATTING FUNCTION ---
+    
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return 'N/A';
-        // Handle Firebase Timestamp objects (which have a toDate method)
-        if (timestamp && typeof timestamp.toDate === 'function') {
-            return timestamp.toDate().toLocaleString('en-GB');
-        }
-        // Handle JS Date objects (from state updates)
-        if (timestamp instanceof Date) {
-            return timestamp.toLocaleString('en-GB');
-        }
-        // Handle ISO strings (from older data)
+        if (timestamp && typeof timestamp.toDate === 'function') { return timestamp.toDate().toLocaleString('en-GB'); }
+        if (timestamp instanceof Date) { return timestamp.toLocaleString('en-GB'); }
         if (typeof timestamp === 'string') {
             const date = new Date(timestamp);
-            if (!isNaN(date)) {
-                return date.toLocaleString('en-GB');
-            }
+            if (!isNaN(date)) { return date.toLocaleString('en-GB'); }
         }
         return 'Invalid Date';
     };
@@ -282,7 +273,7 @@ export default function AgentDashboard({ onLogout }) {
             id: Date.now(),
             category: templateDoc.category,
             name: templateDoc.name,
-            url: `${R2_PUBLIC_URL}/${templateDoc.fileKey}`,
+            url: templateDoc.url,
             fileKey: templateDoc.fileKey,
         };
         const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
@@ -302,7 +293,7 @@ export default function AgentDashboard({ onLogout }) {
             `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-
+    
     const renderDashboard = () => (
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -403,6 +394,7 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                  </div>
                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2>
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {fileCategories.map(category => {
                          const filesInCategory = customerDocs.filter(doc => doc.category === category.name);
@@ -439,6 +431,7 @@ export default function AgentDashboard({ onLogout }) {
         );
     }
     
+    // --- THIS IS THE CORRECTED RETURN STATEMENT ---
     return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
             <input
