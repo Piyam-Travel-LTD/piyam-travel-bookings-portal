@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { piyamTravelLogoBase64 } from '../data';
 
-// --- (SVG Icons: Added Preview icon, XIcon) ---
+// --- (SVG Icons remain the same) ---
 const UserIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> );
 const FingerprintIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 10a2 2 0 0 0-2 2c0 1.02.5 2.51 2 4 .5-1.5.5-2.5 2-4a2 2 0 0 0-2-2Z"/><path d="M12 2a10 10 0 0 0-10 10c0 4.4 3.6 10 10 10s10-5.6 10-10A10 10 0 0 0 12 2Z"/></svg> );
 const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
@@ -25,25 +25,18 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
-
         try {
-            const customersRef = collection(db, "customers");
-            const q = query(customersRef, 
-                where("referenceNumber", "==", `PT-${refNumber.trim().toUpperCase()}`), 
-                where("lastName_lowercase", "==", lastName.trim().toLowerCase())
-            );
-
-            const querySnapshot = await getDocs(q);
-
-            if (querySnapshot.empty) {
-                setError('Invalid reference number or last name. Please try again.');
-            } else {
-                const customerData = querySnapshot.docs[0].data();
-                onLogin({ id: querySnapshot.docs[0].id, ...customerData });
-            }
+            const response = await fetch('/api/lookup-customer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ referenceNumber: refNumber, lastName }),
+            });
+            const data = await response.json();
+            if (!response.ok) { throw new Error(data.error || 'Customer not found.'); }
+            onLogin(data);
         } catch (err) {
             console.error("Login error:", err);
-            setError("An error occurred. Please check your connection and try again.");
+            setError(err.message || 'An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -78,7 +71,7 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
     );
 };
 
-const ClientDashboard = ({ customer, onLogout }) => {
+const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
     const [previewFile, setPreviewFile] = useState(null);
     
     const visibleCategories = fileCategories.filter(category => 
@@ -88,25 +81,33 @@ const ClientDashboard = ({ customer, onLogout }) => {
     const getExpiryDate = () => {
         const dateToUse = customer.accessExpiresAt || customer.createdAt;
         if (!dateToUse) return 'N/A';
-
-        // Date can be a Firebase Timestamp (from old data) or an ISO string (from new data)
-        const expiryBaseDate = dateToUse.seconds ? new Date(dateToUse.seconds * 1000) : new Date(dateToUse);
-        
-        if (customer.accessExpiresAt) {
-             return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        } else {
+        const expiryBaseDate = new Date(dateToUse);
+        if (!customer.accessExpiresAt) {
             expiryBaseDate.setMonth(expiryBaseDate.getMonth() + 10);
-            return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         }
+        return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     };
     
     const getLastUpdatedDate = () => {
         if(!customer.lastUpdatedAt) return 'Not available';
-        const lastUpdatedDate = customer.lastUpdatedAt.seconds ? new Date(customer.lastUpdatedAt.seconds * 1000) : new Date(customer.lastUpdatedAt);
-        return lastUpdatedDate.toLocaleString('en-GB');
+        return new Date(customer.lastUpdatedAt).toLocaleString('en-GB');
     }
     
     const keyInfo = customer.keyInformation;
+    const checklist = customer.checklist || [];
+
+    const handleChecklistItemToggle = async (itemId) => {
+        const updatedChecklist = checklist.map(item => 
+            item.id === itemId ? { ...item, completed: !item.completed } : item
+        );
+        const customerDocRef = doc(db, "customers", customer.id);
+        try {
+            await updateDoc(customerDocRef, { checklist: updatedChecklist });
+            onCustomerUpdate({ ...customer, checklist: updatedChecklist });
+        } catch (error) {
+            console.error("Error updating checklist:", error);
+        }
+    };
 
     return (
         <>
@@ -131,6 +132,20 @@ const ClientDashboard = ({ customer, onLogout }) => {
                             {keyInfo.agentContact && <p><strong>Your Contact:</strong> {keyInfo.agentContact}</p>}
                             {keyInfo.groundContact && <p><strong>Ground Contact:</strong> {keyInfo.groundContact}</p>}
                             {keyInfo.hotelAddress && <p><strong>First Hotel Address:</strong> {keyInfo.hotelAddress}</p>}
+                        </div>
+                    </div>
+                )}
+                
+                {checklist.length > 0 && (
+                    <div className="mb-8">
+                        <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Pre-Travel Checklist</h2>
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
+                            {checklist.map(item => (
+                                <label key={item.id} className="flex items-center cursor-pointer">
+                                    <input type="checkbox" checked={item.completed} onChange={() => handleChecklistItemToggle(item.id)} className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500"/>
+                                    <span className={`ml-3 text-gray-700 ${item.completed ? 'line-through text-gray-400' : ''}`}>{item.text}</span>
+                                </label>
+                            ))}
                         </div>
                     </div>
                 )}
@@ -199,6 +214,7 @@ export default function ClientPortal() {
 
     const handleLogin = (customer) => { setLoggedInCustomer(customer); };
     const handleLogout = () => { setLoggedInCustomer(null); };
+    const handleCustomerUpdate = (updatedData) => { setLoggedInCustomer(updatedData); };
 
     return (
         <div className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -206,7 +222,7 @@ export default function ClientPortal() {
                 {isLoading ? (
                     <div className="text-center"><p className="text-gray-500">Loading...</p></div>
                 ) : loggedInCustomer ? (
-                    <ClientDashboard customer={loggedInCustomer} onLogout={handleLogout} />
+                    <ClientDashboard customer={loggedInCustomer} onLogout={handleLogout} onCustomerUpdate={handleCustomerUpdate} />
                 ) : (
                     <ClientLoginPage onLogin={handleLogin} setIsLoading={setIsLoading} />
                 )}
