@@ -5,11 +5,11 @@ import { piyamTravelLogoBase64, clientPortalUrl } from '../data';
 import QRCode from 'qrcode.react';
 
 // --- (All SVG components remain the same) ---
-const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
-const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
-const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
-const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
-const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
+const SearchIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> );
+const PlusIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> );
+const ArrowLeftIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> );
+const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
+const CopyIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> );
 const LinkIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg> );
 const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
 const LogOutIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> );
@@ -21,19 +21,34 @@ const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', 
 const packageTypes = ['Umrah', 'Holiday', 'Ziyara\'at'];
 
 // --- IMPORTANT: CONFIGURE YOUR TEMPLATE DOCUMENTS HERE ---
-const R2_PUBLIC_URL = "https://pub-a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5.r2.dev"; // Replace with your R2 Public URL
+// 1. Get your R2 Public URL from your Vercel Environment Variables (`R2_PUBLIC_URL`)
+const R2_PUBLIC_URL = "https://pub-a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5.r2.dev"; // Replace with your REAL R2 Public URL
+// 2. Edit this list to match the files you uploaded to your `_templates` folder in R2
 const templateDocuments = [
-    { name: "Umrah Guide.pdf", fileKey: "_templates/umrah_guide.pdf", category: "Others" },
-    { name: "Ziyarat Seminar Notes.pdf", fileKey: "_templates/ziyarat_seminar_notes.pdf", category: "Others" },
-    { name: "Terms and Conditions.pdf", fileKey: "_templates/terms_and_conditions.pdf", category: "Others" },
+    { 
+      name: "Umrah Guide.pdf", // How the button and filename will appear
+      fileKey: "_templates/umrah_guide.pdf", // The exact path in your R2 bucket
+      category: "Others" // Which category it should be added to
+    },
+    { 
+      name: "Ziyarat Seminar Notes.pdf", 
+      fileKey: "_templates/ziyarat_seminar_notes.pdf", 
+      category: "Others" 
+    },
+    { 
+      name: "Terms and Conditions.pdf", 
+      fileKey: "_templates/terms_and_conditions.pdf", 
+      category: "Others" 
+    },
+    // Add more of your template files here following the same format
 ];
 // --- END CONFIGURATION ---
-
 
 export default function AgentDashboard({ onLogout }) {
     const [customers, setCustomers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    // ... (rest of state definitions are the same)
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
@@ -52,6 +67,7 @@ export default function AgentDashboard({ onLogout }) {
     const [currentUploadCategory, setCurrentUploadCategory] = useState('');
     const [uploadingStatus, setUploadingStatus] = useState({});
     const [showArchived, setShowArchived] = useState(false);
+
 
     const updateCustomerState = (updatedCustomer) => {
         const updatedCustomers = customers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c);
@@ -79,6 +95,7 @@ export default function AgentDashboard({ onLogout }) {
         }
     }, [selectedCustomer]);
 
+    // ... (All other functions from handleCreateCustomer to filteredCustomers remain the same)
     const generateRefNum = () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let result = 'PT-';
@@ -174,7 +191,6 @@ export default function AgentDashboard({ onLogout }) {
     
     const handleDeleteFile = async (fileToDelete) => {
         if (!fileToDelete || !fileToDelete.fileKey) { console.error("Missing file key."); return; }
-        // Prevent deletion of template files from R2
         if (fileToDelete.fileKey.startsWith('_templates/')) {
              const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
@@ -291,7 +307,6 @@ export default function AgentDashboard({ onLogout }) {
         updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
     };
 
-
     const handleUploadButtonClick = (category) => {
         setCurrentUploadCategory(category);
         fileInputRef.current.click();
@@ -303,8 +318,9 @@ export default function AgentDashboard({ onLogout }) {
             `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-    
+
     const renderDashboard = () => (
+        // ... (renderDashboard JSX remains the same)
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
@@ -342,7 +358,7 @@ export default function AgentDashboard({ onLogout }) {
         const customerDocs = selectedCustomer.documents || [];
         return (
             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-                 <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
+                <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
                 <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                     <div>
                         <div className="flex items-center gap-4">
@@ -358,9 +374,8 @@ export default function AgentDashboard({ onLogout }) {
                         <button onClick={() => setIsDeleteModalOpen(true)} className="flex items-center justify-center bg-red-100 text-red-800 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition-colors"><TrashIcon/>Delete Folder</button>
                     </div>
                 </div>
-
-                 <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    {/* ... (Key Information section JSX remains the same) ... */}
+                {/* ... (Key Info, Checklist, and Documents sections are now here) ... */}
+                <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Key Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
@@ -408,7 +423,6 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                  </div>
 
-
                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2>
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -451,7 +465,7 @@ export default function AgentDashboard({ onLogout }) {
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
             {/* All Modals */}
-            {isCreateModalOpen && (
+             {isCreateModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Create New Customer Folder</h2>
@@ -487,7 +501,7 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                 </div>
             )}
-             {isVoucherModalOpen && selectedCustomer && (
+            {isVoucherModalOpen && selectedCustomer && (
                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
                         <button onClick={() => setIsVoucherModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6"/></button>
