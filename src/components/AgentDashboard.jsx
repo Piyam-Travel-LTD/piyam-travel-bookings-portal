@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import ReactDOMServer from 'react-dom/server';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { piyamTravelLogoBase64, clientPortalUrl, packageTypes, fileCategories } from '../data';
+import { packageTypes, fileCategories } from '../data';
 import { templateDocuments } from '../templates'; 
 import { SearchIcon, PlusIcon, ArrowLeftIcon, XIcon, FileIcon, LogOutIcon, TrashIcon, ArchiveIcon, NotesIcon } from './Icons';
 import CreateFolderModal from './modals/CreateFolderModal';
@@ -9,6 +10,8 @@ import VoucherModal from './modals/VoucherModal';
 import DeleteFolderModal from './modals/DeleteFolderModal';
 import NotesModal from './modals/NotesModal';
 import ExtendAccessModal from './modals/ExtendAccessModal';
+import TransportVoucherModal from './modals/TransportVoucherModal'; // <-- NEW
+import { TransportVoucher } from './vouchers/TransportVoucher'; // <-- NEW
 
 export default function AgentDashboard({ onLogout }) {
     const [customers, setCustomers] = useState([]);
@@ -20,6 +23,7 @@ export default function AgentDashboard({ onLogout }) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
     const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
+    const [isVoucherGenOpen, setIsVoucherGenOpen] = useState(false); // <-- NEW
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [newCustomerFirstName, setNewCustomerFirstName] = useState('');
     const [newCustomerLastName, setNewCustomerLastName] = useState('');
@@ -39,7 +43,8 @@ export default function AgentDashboard({ onLogout }) {
         setCustomers(updatedCustomers);
         setSelectedCustomer(updatedCustomer);
     };
-
+    
+    // ... (All other functions from useEffect to handleQuickAdd remain the same)
     useEffect(() => {
         const fetchCustomers = async () => {
             setIsLoading(true);
@@ -164,34 +169,26 @@ export default function AgentDashboard({ onLogout }) {
         event.target.value = null; 
     };
     
-    // --- THIS IS THE CORRECTED DELETE FILE LOGIC ---
     const handleDeleteFile = async (fileToDelete) => {
-        if (!fileToDelete || !fileToDelete.id) return;
-
-        // Check if the file is a template. Templates have a fileKey starting with _templates/
-        const isTemplate = fileToDelete.fileKey && fileToDelete.fileKey.startsWith('_templates/');
-
-        // Always remove the file reference from Firestore first
-        const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
-        const customerDocRef = doc(db, "customers", selectedCustomer.id);
-        
-        try {
+        if (!fileToDelete || !fileToDelete.fileKey) { console.error("Missing file key."); return; }
+        if (fileToDelete.fileKey.startsWith('_templates/')) {
+             const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
+            const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
-            
-            // ONLY if it's NOT a template, delete the file from R2 storage
-            if (!isTemplate && fileToDelete.fileKey) {
-                await fetch('/api/delete-file', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fileKey: fileToDelete.fileKey }),
-                });
-            }
-
-            // Update the local state to reflect the change
             updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
-        } catch(error) { 
-            console.error("Error deleting file record:", error); 
+            return;
         }
+        try {
+            await fetch('/api/delete-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileKey: fileToDelete.fileKey }),
+            });
+            const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
+            const customerDocRef = doc(db, "customers", selectedCustomer.id);
+            await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
+        } catch(error) { console.error("Error deleting file:", error); }
     };
 
     const handleDeleteFolder = async () => {
@@ -290,6 +287,42 @@ export default function AgentDashboard({ onLogout }) {
         updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
     };
 
+    // --- NEW VOUCHER SAVE FUNCTION ---
+    const handleSaveVoucher = async (voucherData) => {
+        const htmlString = ReactDOMServer.renderToString(
+            <TransportVoucher customer={selectedCustomer} voucherData={voucherData} />
+        );
+
+        try {
+            const response = await fetch('/api/save-voucher', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ htmlContent: htmlString, customerId: selectedCustomer.id }),
+            });
+
+            if (!response.ok) throw new Error('Failed to save voucher.');
+            const { publicUrl, fileKey, fileName } = await response.json();
+
+            const newDocument = {
+                id: Date.now(),
+                category: 'Transport',
+                name: fileName,
+                url: publicUrl,
+                fileKey: fileKey,
+            };
+
+            const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
+            const customerDocRef = doc(db, "customers", selectedCustomer.id);
+            await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
+
+        } catch (error) {
+            console.error("Error saving voucher:", error);
+            alert("Failed to save voucher. Please try again.");
+        }
+    };
+
+
     const handleUploadButtonClick = (category) => {
         setCurrentUploadCategory(category);
         fileInputRef.current.click();
@@ -302,7 +335,7 @@ export default function AgentDashboard({ onLogout }) {
             (customer.referenceNumber && customer.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    // ... (All render functions and the final return statement remain the same)
+    // --- (renderDashboard remains the same)
     const renderDashboard = () => (
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -337,11 +370,12 @@ export default function AgentDashboard({ onLogout }) {
         </div>
     );
     
+    // --- UPDATED RENDER CUSTOMER FOLDER ---
     const renderCustomerFolder = () => {
         const customerDocs = selectedCustomer.documents || [];
         return (
             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-                <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
+                 <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
                 <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                     <div>
                         <div className="flex items-center gap-4">
@@ -357,8 +391,9 @@ export default function AgentDashboard({ onLogout }) {
                         <button onClick={() => setIsDeleteModalOpen(true)} className="flex items-center justify-center bg-red-100 text-red-800 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition-colors"><TrashIcon/>Delete Folder</button>
                     </div>
                 </div>
-                <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Key Information</h3>
+                 <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    {/* ... Key Information section */}
+                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Key Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
                             <label className="font-semibold text-gray-600">Your Contact:</label>
@@ -375,7 +410,8 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                     <button onClick={handleUpdateKeyInfo} className="mt-2 bg-yellow-500 text-white font-semibold py-1 px-3 rounded-lg hover:bg-yellow-600">Save Key Info</button>
                 </div>
-                <div className="mb-8">
+                 <div className="mb-8">
+                    {/* ... Checklist section */}
                     <h2 className="text-2xl font-semibold text-gray-800 mb-4">Pre-Travel Checklist</h2>
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div className="space-y-2">
@@ -393,6 +429,7 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                 </div>
                  <div className="mb-8">
+                    {/* ... Quick Add section */}
                     <h2 className="text-2xl font-semibold text-gray-800 mb-4">Quick Add Common Documents</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {templateDocuments.map(template => (
@@ -403,7 +440,6 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                  </div>
                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {fileCategories.map(category => {
                          const filesInCategory = customerDocs.filter(doc => doc.category === category.name);
@@ -420,11 +456,17 @@ export default function AgentDashboard({ onLogout }) {
                                         ))
                                     ) : ( <p className="text-sm text-gray-400 italic">No documents uploaded.</p> )}
                                 </div>
-                                 <button onClick={() => handleUploadButtonClick(category.name)} disabled={!!uploadingStatus[category.name]} className="w-full mt-4 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm disabled:bg-gray-200 disabled:cursor-not-allowed">{uploadingStatus[category.name] || 'Upload Files'}</button>
+                                <div className="flex gap-2 mt-4">
+                                    <button onClick={() => handleUploadButtonClick(category.name)} disabled={!!uploadingStatus[category.name]} className="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm disabled:bg-gray-200 disabled:cursor-not-allowed">{uploadingStatus[category.name] || 'Upload'}</button>
+                                    {category.name === 'Transport' && (
+                                        <button onClick={() => setIsVoucherGenOpen(true)} className="w-full bg-green-100 text-green-800 font-semibold py-2 px-4 rounded-lg hover:bg-green-200 transition-colors text-sm">Create Voucher</button>
+                                    )}
+                                </div>
                             </div>
                         )
                     })}
                 </div>
+                {/* ... (Folder Management and Timestamp sections) ... */}
                 <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
                      <h3 className="text-lg font-semibold text-gray-800">Folder Management</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -442,56 +484,16 @@ export default function AgentDashboard({ onLogout }) {
     
     return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept=".pdf,.jpg"
-                multiple
-            />
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
-            <CreateFolderModal 
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                handleCreateCustomer={handleCreateCustomer}
-                newCustomerFirstName={newCustomerFirstName}
-                setNewCustomerFirstName={setNewCustomerFirstName}
-                newCustomerLastName={newCustomerLastName}
-                setNewCustomerLastName={setNewCustomerLastName}
-                newPackageType={newPackageType}
-                setNewPackageType={setNewPackageType}
-                newDestination={newDestination}
-                setNewDestination={setNewDestination}
-                newCustomerRef={newCustomerRef}
-            />
-            <VoucherModal
-                isOpen={isVoucherModalOpen}
-                onClose={() => setIsVoucherModalOpen(false)}
-                customer={selectedCustomer}
-                handleCopy={handleCopy}
-                copySuccess={copySuccess}
-            />
-            <DeleteFolderModal
-                isOpen={isDeleteModalOpen}
-                onClose={() => setIsDeleteModalOpen(false)}
-                deleteConfirmText={deleteConfirmText}
-                setDeleteConfirmText={setDeleteConfirmText}
-                handleDeleteFolder={handleDeleteFolder}
-            />
-            <NotesModal
-                isOpen={isNotesModalOpen}
-                onClose={() => setIsNotesModalOpen(false)}
-                customer={selectedCustomer}
-                newNote={newNote}
-                setNewNote={setNewNote}
-                handleAddNote={handleAddNote}
-            />
-            <ExtendAccessModal
-                isOpen={isExtendModalOpen}
-                onClose={() => setIsExtendModalOpen(false)}
-                handleExtendAccess={handleExtendAccess}
-            />
+            
+            {/* --- All Modals --- */}
+            <CreateFolderModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} handleCreateCustomer={handleCreateCustomer} newCustomerFirstName={newCustomerFirstName} setNewCustomerFirstName={setNewCustomerFirstName} newCustomerLastName={newCustomerLastName} setNewCustomerLastName={setNewCustomerLastName} newPackageType={newPackageType} setNewPackageType={setNewPackageType} newDestination={newDestination} setNewDestination={setNewDestination} newCustomerRef={newCustomerRef} />
+            <VoucherModal isOpen={isVoucherModalOpen} onClose={() => setIsVoucherModalOpen(false)} customer={selectedCustomer} handleCopy={handleCopy} copySuccess={copySuccess} />
+            <DeleteFolderModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} deleteConfirmText={deleteConfirmText} setDeleteConfirmText={setDeleteConfirmText} handleDeleteFolder={handleDeleteFolder} />
+            <NotesModal isOpen={isNotesModalOpen} onClose={() => setIsNotesModalOpen(false)} customer={selectedCustomer} newNote={newNote} setNewNote={setNewNote} handleAddNote={handleAddNote} />
+            <ExtendAccessModal isOpen={isExtendModalOpen} onClose={() => setIsExtendModalOpen(false)} handleExtendAccess={handleExtendAccess} />
+            <TransportVoucherModal isOpen={isVoucherGenOpen} onClose={() => setIsVoucherGenOpen(false)} customer={selectedCustomer} onSave={handleSaveVoucher} />
         </div>
     );
 }
