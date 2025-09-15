@@ -3,13 +3,14 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { piyamTravelLogoBase64 } from '../data';
 
-// --- (SVG Icons and ClientLoginPage remain the same) ---
+// --- (SVG Icons: Added Preview icon, XIcon) ---
 const UserIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> );
 const FingerprintIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 10a2 2 0 0 0-2 2c0 1.02.5 2.51 2 4 .5-1.5.5-2.5 2-4a2 2 0 0 0-2-2Z"/><path d="M12 2a10 10 0 0 0-10 10c0 4.4 3.6 10 10 10s10-5.6 10-10A10 10 0 0 0 12 2Z"/></svg> );
 const FileIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg> );
 const DownloadIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> );
 const InfoIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> );
 const PreviewIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>);
+const XIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> );
 const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo"/> );
 
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
@@ -78,16 +79,19 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
 };
 
 const ClientDashboard = ({ customer, onLogout }) => {
-    // ... (This component is updated to show the itinerary)
     const [previewFile, setPreviewFile] = useState(null);
+    
     const visibleCategories = fileCategories.filter(category => 
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
 
     const getExpiryDate = () => {
         const dateToUse = customer.accessExpiresAt || customer.createdAt;
-        if (!dateToUse?.seconds) return 'N/A';
-        const expiryBaseDate = new Date(dateToUse.seconds * 1000);
+        if (!dateToUse) return 'N/A';
+
+        // Date can be a Firebase Timestamp (from old data) or an ISO string (from new data)
+        const expiryBaseDate = dateToUse.seconds ? new Date(dateToUse.seconds * 1000) : new Date(dateToUse);
+        
         if (customer.accessExpiresAt) {
              return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         } else {
@@ -97,8 +101,9 @@ const ClientDashboard = ({ customer, onLogout }) => {
     };
     
     const getLastUpdatedDate = () => {
-        if(!customer.lastUpdatedAt?.seconds) return 'Not available';
-        return new Date(customer.lastUpdatedAt.seconds * 1000).toLocaleString('en-GB');
+        if(!customer.lastUpdatedAt) return 'Not available';
+        const lastUpdatedDate = customer.lastUpdatedAt.seconds ? new Date(customer.lastUpdatedAt.seconds * 1000) : new Date(customer.lastUpdatedAt);
+        return lastUpdatedDate.toLocaleString('en-GB');
     }
     
     const keyInfo = customer.keyInformation;
