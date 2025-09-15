@@ -9,7 +9,6 @@ import DeleteFolderModal from './modals/DeleteFolderModal';
 import NotesModal from './modals/NotesModal';
 import ExtendAccessModal from './modals/ExtendAccessModal';
 
-
 export default function AgentDashboard({ onLogout }) {
     const [customers, setCustomers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -330,7 +329,7 @@ export default function AgentDashboard({ onLogout }) {
         const customerDocs = selectedCustomer.documents || [];
         return (
             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-                 <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
+                <div className="flex items-center mb-6 border-b pb-4"><button onClick={() => setSelectedCustomer(null)} className="flex items-center text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeftIcon />Back</button></div>
                 <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                     <div>
                         <div className="flex items-center gap-4">
@@ -346,8 +345,7 @@ export default function AgentDashboard({ onLogout }) {
                         <button onClick={() => setIsDeleteModalOpen(true)} className="flex items-center justify-center bg-red-100 text-red-800 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition-colors"><TrashIcon/>Delete Folder</button>
                     </div>
                 </div>
-
-                 <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Key Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
@@ -365,7 +363,6 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                     <button onClick={handleUpdateKeyInfo} className="mt-2 bg-yellow-500 text-white font-semibold py-1 px-3 rounded-lg hover:bg-yellow-600">Save Key Info</button>
                 </div>
-
                 <div className="mb-8">
                     <h2 className="text-2xl font-semibold text-gray-800 mb-4">Pre-Travel Checklist</h2>
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -383,7 +380,6 @@ export default function AgentDashboard({ onLogout }) {
                         </div>
                     </div>
                 </div>
-
                  <div className="mb-8">
                     <h2 className="text-2xl font-semibold text-gray-800 mb-4">Quick Add Common Documents</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -394,7 +390,6 @@ export default function AgentDashboard({ onLogout }) {
                         ))}
                     </div>
                  </div>
-
                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2>
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -443,9 +438,7 @@ export default function AgentDashboard({ onLogout }) {
                 accept=".pdf,.jpg"
                 multiple
             />
-
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
-
             <CreateFolderModal 
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
