@@ -20,6 +20,16 @@ const NotesIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" heig
 const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 const packageTypes = ['Umrah', 'Holiday', 'Ziyara\'at'];
 
+// --- IMPORTANT: CONFIGURE YOUR TEMPLATE DOCUMENTS HERE ---
+const R2_PUBLIC_URL = "https://pub-a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5.r2.dev"; // Replace with your R2 Public URL
+const templateDocuments = [
+    { name: "Umrah Guide.pdf", fileKey: "_templates/umrah_guide.pdf", category: "Others" },
+    { name: "Ziyarat Seminar Notes.pdf", fileKey: "_templates/ziyarat_seminar_notes.pdf", category: "Others" },
+    { name: "Terms and Conditions.pdf", fileKey: "_templates/terms_and_conditions.pdf", category: "Others" },
+];
+// --- END CONFIGURATION ---
+
+
 export default function AgentDashboard({ onLogout }) {
     const [customers, setCustomers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +47,6 @@ export default function AgentDashboard({ onLogout }) {
     const [newDestination, setNewDestination] = useState('');
     const [keyInfo, setKeyInfo] = useState({ agentContact: '', groundContact: '', hotelAddress: '' });
     const [newNote, setNewNote] = useState('');
-    const [newChecklistItem, setNewChecklistItem] = useState('');
     const [copySuccess, setCopySuccess] = useState('');
     const fileInputRef = useRef(null);
     const [currentUploadCategory, setCurrentUploadCategory] = useState('');
@@ -165,6 +174,14 @@ export default function AgentDashboard({ onLogout }) {
     
     const handleDeleteFile = async (fileToDelete) => {
         if (!fileToDelete || !fileToDelete.fileKey) { console.error("Missing file key."); return; }
+        // Prevent deletion of template files from R2
+        if (fileToDelete.fileKey.startsWith('_templates/')) {
+             const updatedDocuments = selectedCustomer.documents.filter(doc => doc.id !== fileToDelete.id);
+            const customerDocRef = doc(db, "customers", selectedCustomer.id);
+            await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
+            updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
+            return;
+        }
         try {
             await fetch('/api/delete-file', {
                 method: 'POST',
@@ -242,7 +259,7 @@ export default function AgentDashboard({ onLogout }) {
         updateCustomerState({ ...selectedCustomer, keyInformation: keyInfo, lastUpdatedAt: { toDate: () => new Date() } });
         alert("Key information saved!");
     };
-
+    
     const handleAddChecklistItem = async () => {
         if (!newChecklistItem.trim()) return;
         const item = { id: Date.now(), text: newChecklistItem.trim(), completed: false };
@@ -258,6 +275,20 @@ export default function AgentDashboard({ onLogout }) {
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { checklist: updatedChecklist, lastUpdatedAt: serverTimestamp() });
         updateCustomerState({ ...selectedCustomer, checklist: updatedChecklist, lastUpdatedAt: { toDate: () => new Date() } });
+    };
+
+    const handleQuickAdd = async (templateDoc) => {
+        const newDocument = {
+            id: Date.now(),
+            category: templateDoc.category,
+            name: templateDoc.name,
+            url: `${R2_PUBLIC_URL}/${templateDoc.fileKey}`,
+            fileKey: templateDoc.fileKey,
+        };
+        const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
+        const customerDocRef = doc(db, "customers", selectedCustomer.id);
+        await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
+        updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: { toDate: () => new Date() } });
     };
 
 
@@ -329,6 +360,7 @@ export default function AgentDashboard({ onLogout }) {
                 </div>
 
                  <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    {/* ... (Key Information section JSX remains the same) ... */}
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Key Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
@@ -364,6 +396,17 @@ export default function AgentDashboard({ onLogout }) {
                         </div>
                     </div>
                 </div>
+
+                 <div className="mb-8">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-4">Quick Add Common Documents</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {templateDocuments.map(template => (
+                            <button key={template.name} onClick={() => handleQuickAdd(template)} className="bg-gray-200 text-gray-800 text-sm font-semibold p-2 rounded-lg hover:bg-gray-300 transition-colors">
+                                {template.name}
+                            </button>
+                        ))}
+                    </div>
+                 </div>
 
 
                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2>
@@ -407,8 +450,8 @@ export default function AgentDashboard({ onLogout }) {
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
-            {/* ... (All modals remain the same) ... */}
-             {isCreateModalOpen && (
+            {/* All Modals */}
+            {isCreateModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Create New Customer Folder</h2>
@@ -444,7 +487,7 @@ export default function AgentDashboard({ onLogout }) {
                     </div>
                 </div>
             )}
-            {isVoucherModalOpen && selectedCustomer && (
+             {isVoucherModalOpen && selectedCustomer && (
                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
                         <button onClick={() => setIsVoucherModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6"/></button>
