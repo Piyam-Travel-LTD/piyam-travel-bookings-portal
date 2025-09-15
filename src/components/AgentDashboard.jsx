@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { piyamTravelLogoBase64, clientPortalUrl, packageTypes, fileCategories } from '../data';
-import { templateDocuments } from '../templates.js'; // <-- This is the corrected import path
+import { packageTypes, fileCategories, clientPortalUrl } from '../data';
+import { templateDocuments } from '../templates';
 import { SearchIcon, PlusIcon, ArrowLeftIcon, XIcon, FileIcon, LogOutIcon, TrashIcon, ArchiveIcon, NotesIcon } from './Icons';
 import CreateFolderModal from './modals/CreateFolderModal';
 import VoucherModal from './modals/VoucherModal';
