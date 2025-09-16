@@ -3,7 +3,7 @@ import ReactDOMServer from 'react-dom/server';
 import { db } from '../firebase';
 import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import useStore from '../store'; // <-- IMPORT THE NEW STORE
-import { packageTypes, fileCategories } from '../data';
+import { packageTypes, fileCategories, checklistTemplates } from '../data'; // <-- Import the new templates
 import { templateDocuments } from '../templates';
 import { SearchIcon, PlusIcon, ArrowLeftIcon, XIcon, FileIcon, LogOutIcon, TrashIcon, ArchiveIcon, NotesIcon } from './Icons';
 import CreateFolderModal from './modals/CreateFolderModal';
@@ -81,8 +81,12 @@ export default function AgentDashboard({ onLogout }) {
 
     const handleCopy = (textToCopy, message) => { navigator.clipboard.writeText(textToCopy).then(() => { setCopySuccess(message); setTimeout(() => setCopySuccess(''), 2000); }); };
 
-    const handleCreateCustomer = async () => {
+        const handleCreateCustomer = async () => {
         if (newCustomerFirstName.trim() && newCustomerLastName.trim()) {
+            
+            // Get the correct checklist template based on the selected package type
+            const initialChecklist = checklistTemplates[newPackageType] || [];
+
             const newCustomerData = {
                 firstName: newCustomerFirstName.trim(),
                 lastName: newCustomerLastName.trim(),
@@ -93,7 +97,7 @@ export default function AgentDashboard({ onLogout }) {
                 documents: [],
                 itinerary: [],
                 notes: [],
-                checklist: [],
+                checklist: initialChecklist, // <-- Use the pre-defined checklist
                 keyInformation: { agentContact: '', groundContact: '', hotelAddress: '' },
                 status: 'In Progress',
                 isArchived: false,
@@ -102,7 +106,7 @@ export default function AgentDashboard({ onLogout }) {
             };
             try {
                 const docRef = await addDoc(collection(db, "customers"), newCustomerData);
-                addCustomer({ id: docRef.id, ...newCustomerData }); // <-- Use the store action
+                addCustomer({ id: docRef.id, ...newCustomerData });
                 setNewCustomerFirstName('');
                 setNewCustomerLastName('');
                 setNewPackageType(packageTypes[0]);
