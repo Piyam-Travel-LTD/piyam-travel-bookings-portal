@@ -6,8 +6,8 @@ import { XIcon, LinkIcon, CopyIcon } from '../Icons';
 export default function VoucherModal({ isOpen, onClose, customer, handleCopy, copySuccess }) {
     if (!isOpen || !customer) return null;
 
-    // Define the detailed text to be copied
-    const textToCopy = `Dear ${customer.firstName} ${customer.lastName},\n\nYour travel documents are now available in your secure client portal. Please use the details below to log in:\n\nWebsite: ${clientPortalUrl}\nReference Number: ${customer.referenceNumber}\nLast Name: ${customer.lastName}\n\nKind regards,\nThe Piyam Travel Team`;
+    // Define the detailed text to be copied with asterisks for bolding
+    const textToCopy = `Dear ${customer.firstName} ${customer.lastName},\n\nYour travel documents are now available in your secure client portal. Please use the details below to log in:\n\nWebsite: ${clientPortalUrl}\nReference Number: *${customer.referenceNumber}*\nLast Name: *${customer.lastName}*\n\nKind regards,\nThe Piyam Travel Team`;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
