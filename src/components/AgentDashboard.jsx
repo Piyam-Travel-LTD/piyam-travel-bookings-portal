@@ -205,6 +205,33 @@ export default function AgentDashboard({ onLogout }) {
 
     const handleToggleStatus = async () => {
         const newStatus = selectedCustomer.status === 'Completed' ? 'In Progress' : 'Completed';
+        // --- NEW EMAIL LOGIC ---
+    if (newStatus === 'Completed') {
+        const customerEmail = selectedCustomer.keyInformation?.customerEmail;
+        if (!customerEmail) {
+            alert("Cannot send completion email because the customer has not provided an email address.");
+        } else {
+            try {
+                const response = await fetch('/api/send-completion-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customer: selectedCustomer }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to send email.');
+                }
+                
+                alert(`Completion email has been sent to ${customerEmail}.`);
+
+            } catch (error) {
+                console.error("Error sending completion email:", error);
+                alert("Could not send the completion email. Please try again.");
+                return; // Stop the process if the email fails
+            }
+        }
+    }
+    // --- END NEW EMAIL LOGIC ---
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { status: newStatus, lastUpdatedAt: serverTimestamp() });
         updateCustomerState({ ...selectedCustomer, status: newStatus, lastUpdatedAt: new Date() });
