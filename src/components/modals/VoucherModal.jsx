@@ -6,6 +6,9 @@ import { XIcon, LinkIcon, CopyIcon } from '../Icons';
 export default function VoucherModal({ isOpen, onClose, customer, handleCopy, copySuccess }) {
     if (!isOpen || !customer) return null;
 
+    // Define the detailed text to be copied
+    const textToCopy = `Dear ${customer.firstName} ${customer.lastName},\n\nYour travel documents are now available in your secure client portal. Please use the details below to log in:\n\nWebsite: ${clientPortalUrl}\nReference Number: ${customer.referenceNumber}\nLast Name: ${customer.lastName}\n\nKind regards,\nThe Piyam Travel Team`;
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
@@ -30,7 +33,7 @@ export default function VoucherModal({ isOpen, onClose, customer, handleCopy, co
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     <button onClick={() => handleCopy(clientPortalUrl, 'Link Copied!')} className="flex items-center justify-center w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><LinkIcon className="h-5 w-5 mr-2" />Copy Link</button>
-                    <button onClick={() => handleCopy( `Dear ${customer.firstName} ${customer.lastName},\n\nYour travel documents are now available...`, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
+                    <button onClick={() => handleCopy(textToCopy, 'Details Copied!')} className="flex items-center justify-center w-full bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><CopyIcon className="h-5 w-5 mr-2" />Copy Details as Text</button>
                 </div>
                 {copySuccess && <p className="text-center text-green-600 font-semibold mt-4">{copySuccess}</p>}
             </div>
