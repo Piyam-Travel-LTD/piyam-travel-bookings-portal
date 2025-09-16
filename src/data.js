@@ -7,3 +7,34 @@ export const clientPortalUrl = "https://bookings.piyamtravel.com";
 export const fileCategories = [ { name: 'Flights', icon: '✈️' }, { name: 'Hotels', icon: '🏨' }, { name: 'Transport', icon: '🚗' }, { name: 'Visa', icon: '📄' }, { name: 'E-Sim', icon: '📱' }, { name: 'Insurance', icon: '🛡️' }, { name: 'Others', icon: '📎' }, ];
 
 export const packageTypes = ['Umrah', 'Holiday', 'Ziyara\'at'];
+
+// --- NEW PRE-DEFINED CHECKLISTS ---
+export const checklistTemplates = {
+  'Umrah': [
+    { id: 1, text: 'Ihram / Abaya', completed: false },
+    { id: 2, text: 'SAR Currency', completed: false },
+    { id: 3, text: 'Umrah Guide book', completed: false },
+    { id: 4, text: 'Sim Card / E-Sim', completed: false },
+    { id: 5, text: 'Passports', completed: false },
+    { id: 6, text: 'Luggage Tags', completed: false },
+    { id: 7, text: 'Package Card', completed: false },
+    { id: 8, text: 'Umrah Package Envelope', completed: false },
+  ],
+  'Ziyara\'at': [
+    { id: 1, text: 'Abaya / Scarf', completed: false },
+    { id: 2, text: 'Local Currency', completed: false },
+    { id: 3, text: 'Ziyara\'at Guide Book', completed: false },
+    { id: 4, text: 'Sim Card / E-Sim', completed: false },
+    { id: 5, text: 'Passports', completed: false },
+    { id: 6, text: 'Luggage Tags', completed: false },
+    { id: 7, text: 'Package Card', completed: false },
+  ],
+  'Holiday': [
+    { id: 1, text: 'Local Currency', completed: false },
+    { id: 2, text: 'Travel Insurance', completed: false },
+    { id: 3, text: 'Sim Card / E-Sim', completed: false },
+    { id: 4, text: 'Passports', completed: false },
+    { id: 5, text: 'Hotel Vouchers', completed: false },
+    { id: 6, text: 'Flight Tickets', completed: false },
+  ]
+};
