@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { piyamTravelLogoBase64, fileCategories } from '../data';
 import { UserIcon, FingerprintIcon, FileIcon, DownloadIcon, InfoIcon, PreviewIcon, XIcon } from './Icons';
 
@@ -62,9 +62,10 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
     );
 };
 
-const ClientDashboard = ({ customer, onLogout }) => {
+const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
     const [previewFile, setPreviewFile] = useState(null);
-    
+    const [isChecklistVisible, setIsChecklistVisible] = useState(true); // State for visibility
+
     const visibleCategories = fileCategories.filter(category => 
         customer.documents && customer.documents.some(doc => doc.category === category.name)
     );
@@ -85,6 +86,20 @@ const ClientDashboard = ({ customer, onLogout }) => {
     }
     
     const keyInfo = customer.keyInformation;
+    const checklist = customer.checklist || [];
+
+    const handleChecklistItemToggle = async (itemId) => {
+        const updatedChecklist = checklist.map(item =>
+            item.id === itemId ? { ...item, completed: !item.completed } : item
+        );
+        const customerDocRef = doc(db, "customers", customer.id);
+        try {
+            await updateDoc(customerDocRef, { checklist: updatedChecklist });
+            onCustomerUpdate({ ...customer, checklist: updatedChecklist });
+        } catch (error) {
+            console.error("Error updating checklist:", error);
+        }
+    };
 
     return (
         <>
@@ -113,17 +128,33 @@ const ClientDashboard = ({ customer, onLogout }) => {
                     </div>
                 )}
                 
-                { (customer.checklist || []).length > 0 && (
+                { checklist.length > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Pre-Travel Checklist</h2>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-                            {customer.checklist.map(item => (
-                                <label key={item.id} className="flex items-center">
-                                    <input type="checkbox" checked={item.completed} readOnly className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-not-allowed"/>
-                                    <span className={`ml-3 text-gray-700 ${item.completed ? 'line-through text-gray-400' : ''}`}>{item.text}</span>
-                                </label>
-                            ))}
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-semibold text-gray-700">Your Pre-Travel Checklist</h2>
+                            <button 
+                                onClick={() => setIsChecklistVisible(!isChecklistVisible)}
+                                className="text-sm font-semibold text-red-800 hover:text-red-600"
+                            >
+                                {isChecklistVisible ? 'Hide Checklist' : 'Show Checklist'}
+                            </button>
                         </div>
+                        
+                        {isChecklistVisible && (
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
+                                {checklist.map(item => (
+                                    <label key={item.id} className="flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={item.completed} 
+                                            onChange={() => handleChecklistItemToggle(item.id)}
+                                            className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                                        />
+                                        <span className={`ml-3 text-gray-700 ${item.completed ? 'line-through text-gray-400' : ''}`}>{item.text}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
                 
@@ -191,6 +222,7 @@ export default function ClientPortal() {
 
     const handleLogin = (customer) => { setLoggedInCustomer(customer); };
     const handleLogout = () => { setLoggedInCustomer(null); };
+    const handleCustomerUpdate = (updatedData) => { setLoggedInCustomer(updatedData); };
 
     return (
         <div className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -198,7 +230,11 @@ export default function ClientPortal() {
                 {isLoading ? (
                     <div className="text-center"><p className="text-gray-500">Loading...</p></div>
                 ) : loggedInCustomer ? (
-                    <ClientDashboard customer={loggedInCustomer} onLogout={handleLogout} />
+                    <ClientDashboard 
+                        customer={loggedInCustomer} 
+                        onLogout={handleLogout}
+                        onCustomerUpdate={handleCustomerUpdate}
+                    />
                 ) : (
                     <ClientLoginPage onLogin={handleLogin} setIsLoading={setIsLoading} />
                 )}
