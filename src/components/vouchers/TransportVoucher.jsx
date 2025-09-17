@@ -2,12 +2,27 @@ import React from 'react';
 import QRCode from 'qrcode.react';
 import { piyamTravelLogoBase64 } from '../../data';
 
-// Helper function to format dates and times
+// Helper to format time in the new "24HR AM/PM" format
+const formatTimeOnly = (date, time) => {
+    if (!date || !time) return 'N/A';
+    const dateTime = new Date(`${date}T${time}`);
+    
+    // Get the 24-hour part (e.g., "14:00")
+    const time24hr = dateTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+    // Get the AM/PM part (e.g., "PM")
+    const ampm = dateTime.toLocaleTimeString('en-US', { hour12: true, hour: 'numeric' }).slice(-2);
+
+    return `${time24hr} ${ampm}`;
+};
+
+
+// Helper to format the full date and time string
 const formatDateTime = (dateStr, timeStr) => {
     if (!dateStr || !timeStr) return 'N/A';
     const date = new Date(`${dateStr}T${timeStr}`);
     const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const formattedTime = formatTimeOnly(dateStr, timeStr); // Use the new time formatter
     return `${formattedDate} @ ${formattedTime}`;
 };
 
@@ -58,7 +73,7 @@ export const TransportVoucher = ({ customer, voucherData }) => {
                         <div style={{ fontSize: '13px', marginTop: '4px', color: '#374151', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             {voucherData.itinerary.map((item, index) => (
                                 <div key={index}>
-                                    <strong>{index + 1}. {item.type}:</strong> {item.description} at {formatDateTime(item.date, item.time).split('@')[1]}
+                                    <strong>{index + 1}. {item.type}:</strong> {item.description} at {formatTimeOnly(item.date, item.time)}
                                 </div>
                             ))}
                         </div>
