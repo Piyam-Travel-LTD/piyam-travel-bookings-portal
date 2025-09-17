@@ -305,8 +305,6 @@ export default function AgentDashboard({ onLogout }) {
     };
 
     const handleSaveVoucher = async (voucherData) => {
-        // This function now uses the full TransportVoucher component to render the HTML
-        // ensuring the saved HTML is identical to what's displayed.
         const htmlString = ReactDOMServer.renderToString(
             <TransportVoucher customer={selectedCustomer} voucherData={voucherData} />
         );
@@ -333,10 +331,13 @@ export default function AgentDashboard({ onLogout }) {
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
             updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
+            
+            return true; // <-- Return true on success
 
         } catch (error) {
             console.error("Error saving voucher:", error);
-            alert("Failed to save voucher. Please try again.");
+            alert("Failed to save voucher. Please check the console for details and try again.");
+            return false; // <-- Return false on failure
         }
     };
 
