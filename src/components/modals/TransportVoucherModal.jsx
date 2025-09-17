@@ -3,6 +3,7 @@ import { XIcon } from '../Icons';
 
 export default function TransportVoucherModal({ isOpen, onClose, customer, onSave }) {
     const [formData, setFormData] = useState({
+        bookingId: '', // <-- NEW FIELD
         passengers: '2 Adults, 0 Children',
         flightNumber: 'EK007',
         airports: 'LHR to JED',
@@ -31,6 +32,24 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
         setIsSaving(false);
         onClose();
     };
+    
+    // Custom labels for form fields
+    const fieldLabels = {
+        bookingId: 'Supplier Voucher No. (Internal)',
+        passengers: 'Passenger Details (e.g., 2 Adults)',
+        flightNumber: 'Flight Number',
+        airports: 'Airports (e.g., LHR to JED)',
+        landingDate: 'Landing Date',
+        landingTime: 'Landing Time',
+        pickupLocation: 'Pickup Location',
+        dropoffLocation: 'Dropoff Location',
+        pickupDate: 'Pickup Date',
+        pickupTime: 'Pickup Time',
+        maxBags: 'Max Bags',
+        extraBaggageFee: 'Extra Baggage Fee',
+        providerName: 'Provider Company Name',
+        providerContact: 'Provider Contact Number',
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -40,10 +59,9 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6"/></button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm overflow-y-auto max-h-[60vh] p-2">
-                    {/* Dynamically create form fields */}
                     {Object.keys(formData).map(key => (
-                         <div key={key}>
-                            <label className="block font-medium text-gray-700 capitalize">{key.replace(/([A-Z])/g, ' $1')}</label>
+                         <div key={key} className={key === 'bookingId' ? 'md:col-span-2' : ''}>
+                            <label className="block font-medium text-gray-700">{fieldLabels[key] || key}</label>
                             <input
                                 type="text"
                                 name={key}
