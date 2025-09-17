@@ -305,20 +305,35 @@ export default function AgentDashboard({ onLogout }) {
     };
 
     const handleSaveVoucher = async (voucherData) => {
-        const htmlString = ReactDOMServer.renderToString(<TransportVoucher customer={selectedCustomer} voucherData={voucherData} />);
+        // This function now uses the full TransportVoucher component to render the HTML
+        // ensuring the saved HTML is identical to what's displayed.
+        const htmlString = ReactDOMServer.renderToString(
+            <TransportVoucher customer={selectedCustomer} voucherData={voucherData} />
+        );
+
         try {
             const response = await fetch('/api/save-voucher', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ htmlContent: htmlString, customerId: selectedCustomer.id }),
             });
+
             if (!response.ok) throw new Error('Failed to save voucher.');
             const { publicUrl, fileKey, fileName } = await response.json();
-            const newDocument = { id: Date.now(), category: 'Transport', name: fileName, url: publicUrl, fileKey: fileKey };
+
+            const newDocument = {
+                id: Date.now(),
+                category: 'Transport',
+                name: fileName,
+                url: publicUrl,
+                fileKey: fileKey,
+            };
+
             const updatedDocuments = [...(selectedCustomer.documents || []), newDocument];
             const customerDocRef = doc(db, "customers", selectedCustomer.id);
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
             updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
+
         } catch (error) {
             console.error("Error saving voucher:", error);
             alert("Failed to save voucher. Please try again.");
