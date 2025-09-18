@@ -2,7 +2,8 @@ import formData from 'form-data';
 import Mailgun from 'mailgun.js';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { CompletionEmail } from '../../src/components/emails/CompletionEmail';
+// Import from the new, local library file
+import { CompletionEmail } from './_lib/emailTemplates.js';
 
 const mailgun = new Mailgun(formData);
 
