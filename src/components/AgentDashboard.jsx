@@ -54,6 +54,7 @@ export default function AgentDashboard({ onLogout }) {
     const [currentUploadCategory, setCurrentUploadCategory] = useState('');
     const [uploadingStatus, setUploadingStatus] = useState({});
     const [showArchived, setShowArchived] = useState(false);
+    const [previewFile, setPreviewFile] = useState(null);
 
     useEffect(() => {
         fetchCustomers();
@@ -205,7 +206,6 @@ export default function AgentDashboard({ onLogout }) {
 
     const handleToggleStatus = async () => {
         const newStatus = selectedCustomer.status === 'Completed' ? 'In Progress' : 'Completed';
-        // --- NEW EMAIL LOGIC ---
     if (newStatus === 'Completed') {
         const customerEmail = selectedCustomer.keyInformation?.customerEmail;
         if (!customerEmail) {
@@ -227,11 +227,10 @@ export default function AgentDashboard({ onLogout }) {
             } catch (error) {
                 console.error("Error sending completion email:", error);
                 alert("Could not send the completion email. Please try again.");
-                return; // Stop the process if the email fails
+                return; 
             }
         }
     }
-    // --- END NEW EMAIL LOGIC ---
         const customerDocRef = doc(db, "customers", selectedCustomer.id);
         await updateDoc(customerDocRef, { status: newStatus, lastUpdatedAt: serverTimestamp() });
         updateCustomerState({ ...selectedCustomer, status: newStatus, lastUpdatedAt: new Date() });
@@ -332,12 +331,12 @@ export default function AgentDashboard({ onLogout }) {
             await updateDoc(customerDocRef, { documents: updatedDocuments, lastUpdatedAt: serverTimestamp() });
             updateCustomerState({ ...selectedCustomer, documents: updatedDocuments, lastUpdatedAt: new Date() });
             
-            return true; // <-- Return true on success
+            return true;
 
         } catch (error) {
             console.error("Error saving voucher:", error);
             alert("Failed to save voucher. Please check the console for details and try again.");
-            return false; // <-- Return false on failure
+            return false; 
         }
     };
 
@@ -412,7 +411,7 @@ export default function AgentDashboard({ onLogout }) {
 
                 <div className="mb-8"><h2 className="text-2xl font-semibold text-gray-800 mb-4">Pre-Travel Checklist</h2><div className="bg-gray-50 p-4 rounded-lg border border-gray-200"><div className="space-y-2">{(selectedCustomer.checklist || []).map(item => (<div key={item.id} className="flex items-center justify-between bg-white p-2 rounded"><span className="text-gray-700">{item.text}</span><button onClick={() => handleDeleteChecklistItem(item.id)} className="text-gray-400 hover:text-red-600"><XIcon className="h-4 w-4" /></button></div>))}<div className="flex gap-2 mt-4"><input type="text" value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} placeholder="Add new checklist item..." className="flex-grow w-full border border-gray-300 rounded-lg p-2" /><button onClick={handleAddChecklistItem} className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700">Add</button></div></div></div></div>
                 <div className="mb-8"><h2 className="text-2xl font-semibold text-gray-800 mb-4">Quick Add Common Documents</h2><div className="grid grid-cols-2 md:grid-cols-4 gap-2">{templateDocuments.map(template => (<button key={template.name} onClick={() => handleQuickAdd(template)} className="bg-gray-200 text-gray-800 text-sm font-semibold p-2 rounded-lg hover:bg-gray-300 transition-colors">{template.name}</button>))}</div></div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2><div className="grid grid-cols-1 md:grid-cols-3 gap-6">{fileCategories.map(category => {const filesInCategory = customerDocs.filter(doc => doc.category === category.name);return (<div key={category.name} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col"><h3 className="font-bold text-lg mb-3">{category.icon} {category.name}</h3><div className="space-y-2 flex-grow min-h-[50px]">{filesInCategory.length > 0 ? (filesInCategory.map(file => (<div key={file.id} className="bg-white p-2 rounded-md border flex justify-between items-center text-sm"><div className="flex items-center truncate"><FileIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gray-500" /><span className="truncate">{file.name}</span></div><button onClick={() => handleDeleteFile(file)} className="text-gray-400 hover:text-red-600 flex-shrink-0 ml-2"><XIcon className="h-4 w-4" /></button></div>))) : (<p className="text-sm text-gray-400 italic">No documents uploaded.</p>)}</div><div className="flex gap-2 mt-4"><button onClick={() => handleUploadButtonClick(category.name)} disabled={!!uploadingStatus[category.name]} className="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm disabled:bg-gray-200 disabled:cursor-not-allowed">{uploadingStatus[category.name] || 'Upload'}</button>{category.name === 'Transport' && (<button onClick={() => setIsVoucherGenOpen(true)} className="w-full bg-green-100 text-green-800 font-semibold py-2 px-4 rounded-lg hover:bg-green-200 transition-colors text-sm">Create Voucher</button>)}</div></div>)})}</div>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4">Documents</h2><div className="grid grid-cols-1 md:grid-cols-3 gap-6">{fileCategories.map(category => {const filesInCategory = customerDocs.filter(doc => doc.category === category.name);return (<div key={category.name} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col"><h3 className="font-bold text-lg mb-3">{category.icon} {category.name}</h3><div className="space-y-2 flex-grow min-h-[50px]">{filesInCategory.length > 0 ? (filesInCategory.map(file => (<div key={file.id} className="bg-white p-2 rounded-md border flex justify-between items-center text-sm"><div className="flex items-center truncate"><FileIcon className="h-4 w-4 mr-2 flex-shrink-0 text-gray-500" /><span className="truncate">{file.name}</span></div><div className="flex items-center gap-2"><button onClick={() => handleDeleteFile(file)} className="text-gray-400 hover:text-red-600 flex-shrink-0 ml-2"><XIcon className="h-4 w-4" /></button>{category.name === 'Transport' && file.name.toLowerCase().includes('voucher') && (<button onClick={() => setPreviewFile(file)} className="text-xs bg-blue-100 text-blue-800 font-semibold py-1 px-2 rounded-lg hover:bg-blue-200 transition-colors">Preview</button>)}</div></div>))) : (<p className="text-sm text-gray-400 italic">No documents uploaded.</p>)}</div><div className="flex gap-2 mt-4"><button onClick={() => handleUploadButtonClick(category.name)} disabled={!!uploadingStatus[category.name]} className="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm disabled:bg-gray-200 disabled:cursor-not-allowed">{uploadingStatus[category.name] || 'Upload'}</button>{category.name === 'Transport' && (<button onClick={() => setIsVoucherGenOpen(true)} className="w-full bg-green-100 text-green-800 font-semibold py-2 px-4 rounded-lg hover:bg-green-200 transition-colors text-sm">Create Voucher</button>)}</div></div>)})}</div>
                 <div className="mt-6 pt-6 border-t border-gray-200 space-y-4"><h3 className="text-lg font-semibold text-gray-800">Folder Management</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><button onClick={handleToggleStatus} className={`font-semibold py-2 px-4 rounded-lg transition-colors ${selectedCustomer.status === 'Completed' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-green-100 text-green-800 hover:bg-green-200'}`}>{selectedCustomer.status === 'Completed' ? 'Mark as In Progress' : 'Mark as Completed'}</button><button onClick={() => setIsExtendModalOpen(true)} className="bg-blue-100 text-blue-800 font-semibold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors">Extend Access</button><button onClick={handleToggleArchive} className="flex items-center justify-center bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"><ArchiveIcon />{selectedCustomer.isArchived ? 'Unarchive Folder' : 'Archive Folder'}</button></div></div>
                 <div className="mt-4 text-center text-xs text-gray-400">Last Updated: {formatTimestamp(selectedCustomer.lastUpdatedAt)}</div>
             </div>
@@ -429,6 +428,7 @@ export default function AgentDashboard({ onLogout }) {
             <NotesModal isOpen={isNotesModalOpen} onClose={() => setIsNotesModalOpen(false)} customer={selectedCustomer} newNote={newNote} setNewNote={setNewNote} handleAddNote={handleAddNote} />
             <ExtendAccessModal isOpen={isExtendModalOpen} onClose={() => setIsExtendModalOpen(false)} handleExtendAccess={handleExtendAccess} />
             <TransportVoucherModal isOpen={isVoucherGenOpen} onClose={() => setIsVoucherGenOpen(false)} customer={selectedCustomer} onSave={handleSaveVoucher} />
+            {previewFile && (<div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"><div className="bg-white rounded-lg shadow-2xl w-full h-full max-w-4xl max-h-[90vh] flex flex-col"><div className="flex justify-between items-center p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg truncate">{previewFile.name}</h3><button onClick={() => setPreviewFile(null)} className="text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6" /></button></div><div className="flex-grow p-2"><iframe src={previewFile.url} title="Voucher Preview" className="w-full h-full border-0"></iframe></div></div></div>)}
         </div>
     );
 }
