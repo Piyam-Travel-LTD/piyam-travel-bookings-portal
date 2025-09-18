@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   const emailHtml = ReactDOMServer.renderToString(<CompletionEmail customer={customer} />);
 
   const messageData = {
-    from: process.env.MAILGUN_SENDER_EMAIL,
+    from: process.env.MAILGUN_SENDER_EMAIL, // This now uses the variable from your Vercel settings
     to: customer.keyInformation.customerEmail,
     subject: `Your Travel Documents for ${customer.destination} are Complete!`,
     html: emailHtml,
