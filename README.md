@@ -84,6 +84,11 @@ R2_ACCESS_KEY_ID="YOUR_R2_ACCESS_KEY_ID"
 R2_SECRET_ACCESS_KEY="YOUR_R2_SECRET_ACCESS_KEY"
 R2_BUCKET_NAME="piyam-travel-documents"
 R2_PUBLIC_URL="YOUR_R2_PUBLIC_URL"
+
+# Mailgun Configuration (For sending emails)
+MAILGUN_API_KEY="YOUR_MAILGUN_PRIVATE_API_KEY"
+MAILGUN_DOMAIN="YOUR_MAILGUN_DOMAIN" # e.g., mg.yourwebsite.com
+MAILGUN_SENDER_EMAIL="Piyam Travel <noreply@yourmaildomain.com>" # The 'From' address for emails
 ```
 **Note:** The `VITE_` prefix is important. It tells Vite to make these variables securely available to your front-end code.
 
