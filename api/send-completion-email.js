@@ -5,9 +5,12 @@ import ReactDOMServer from 'react-dom/server';
 import { CompletionEmail } from '../../src/components/emails/CompletionEmail';
 
 const mailgun = new Mailgun(formData);
+
+// Initialize the Mailgun client with the EU endpoint
 const mg = mailgun.client({
   username: 'api',
   key: process.env.MAILGUN_API_KEY,
+  url: 'https://api.eu.mailgun.net', // This is the required line for EU domains
 });
 
 export default async function handler(req, res) {
@@ -23,16 +26,18 @@ export default async function handler(req, res) {
   const emailHtml = ReactDOMServer.renderToString(<CompletionEmail customer={customer} />);
 
   const messageData = {
-    from: process.env.MAILGUN_SENDER_EMAIL, // This now uses the variable from your Vercel settings
+    from: process.env.MAILGUN_SENDER_EMAIL,
     to: customer.keyInformation.customerEmail,
     subject: `Your Travel Documents for ${customer.destination} are Complete!`,
     html: emailHtml,
   };
 
   try {
+    // Use your Mailgun domain from the environment variables
     await mg.messages.create(process.env.MAILGUN_DOMAIN, messageData);
     res.status(200).json({ success: true, message: 'Completion email sent successfully.' });
   } catch (error) {
+    // Log the detailed error from Mailgun for better debugging
     console.error('Error sending email via Mailgun:', error);
     res.status(500).json({ error: 'Could not send completion email.' });
   }
