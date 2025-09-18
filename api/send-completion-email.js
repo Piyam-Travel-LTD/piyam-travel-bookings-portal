@@ -5,7 +5,7 @@ import Mailgun from 'mailgun.js';
 const createEmailHtml = (customer) => {
   // IMPORTANT: For the logo to display reliably in all email clients,
   // it should be hosted publicly. Replace this URL with the actual URL of your logo.
-  const logoUrl = 'https://www.piyamtravel.com/wp-content/uploads/2023/08/Piyam-Travel-Logo-PNG.png'; // Example URL
+  const logoUrl = 'https://pub-cf96e4b7c0424b8b9b1040a20acf06d3.r2.dev/Logo.png'; // Example URL
   const clientPortalUrl = "https://bookings.piyamtravel.com";
 
   return `
