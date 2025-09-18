@@ -6,6 +6,39 @@ import { UserIcon, FingerprintIcon, FileIcon, DownloadIcon, InfoIcon, PreviewIco
 
 const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo"/> );
 
+const ItineraryTimeline = ({ itinerary }) => {
+    if (!itinerary || itinerary.length === 0) return null;
+  
+    return (
+      <div className="mt-4 border-t pt-4 dark:border-gray-600">
+        <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3">Transport Itinerary</h4>
+        <div className="relative pl-8">
+          <div className="absolute left-4 top-0 h-full w-0.5 bg-gray-200 dark:bg-gray-600"></div>
+          {itinerary.map((item, index) => (
+            <div key={index} className="flex items-start mb-6">
+                <div className="absolute left-0 flex-shrink-0 w-8 h-8 bg-red-800 rounded-full text-white flex items-center justify-center z-10">
+                    {index + 1}
+                </div>
+                <div className="ml-4">
+                    <p className="font-semibold">{item.type}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {new Date(`${item.date}T${item.time}`).toLocaleString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    })}
+                    </p>
+                </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
 const ClientLoginPage = ({ onLogin, setIsLoading }) => {
     const [refNumber, setRefNumber] = useState('');
     const [lastName, setLastName] = useState('');
@@ -78,7 +111,7 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
             ...customer.keyInformation,
             customerSim: localSim,
             customerEmail: localEmail,
-            isEmailLocked: true // Lock email after first save
+            isEmailLocked: true 
         };
         const customerDocRef = doc(db, "customers", customer.id);
         try {
@@ -151,7 +184,7 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
 
                 {checklist.length > 0 && (<div className="mb-8"><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-semibold text-gray-700">Your Pre-Travel Checklist</h2><button onClick={() => setIsChecklistVisible(!isChecklistVisible)} className="text-sm font-semibold text-red-800 hover:text-red-600">{isChecklistVisible ? 'Hide Checklist' : 'Show Checklist'}</button></div>{isChecklistVisible && (<div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">{checklist.map(item => (<label key={item.id} className="flex items-center cursor-pointer"><input type="checkbox" checked={item.completed} onChange={() => handleChecklistItemToggle(item.id)} className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500" /><span className={`ml-3 text-gray-700 ${item.completed ? 'line-through text-gray-400' : ''}`}>{item.text}</span></label>))}</div>)}</div>)}
                 <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Documents</h2>
-                {visibleCategories.length > 0 ? (<div className="space-y-6">{visibleCategories.map(category => (<div key={category.name}><h3 className="font-bold text-lg mb-3">{category.icon} {category.name}</h3><div className="space-y-2">{customer.documents.filter(doc => doc.category === category.name).map(file => (<div key={file.id} className="bg-gray-50 p-3 rounded-lg border flex justify-between items-center"><div className="flex items-center truncate"><FileIcon className="h-5 w-5 mr-3 flex-shrink-0 text-gray-500" /><span className="truncate font-medium text-gray-800">{file.name}</span></div><div className="flex items-center gap-2"><button onClick={() => setPreviewFile(file)} className="flex items-center bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg hover:bg-gray-300 transition-colors text-sm"><PreviewIcon className="h-4 w-4 mr-2" />Preview</button><a href={file.url} download className="flex items-center bg-red-800 text-white font-semibold py-1 px-3 rounded-lg hover:bg-red-700 transition-colors text-sm"><DownloadIcon className="h-4 w-4 mr-2" />Download</a></div></div>))}</div></div>))}</div>) : (<div className="text-center py-12"><p className="text-gray-500">No documents have been uploaded for you yet.</p></div>)}
+                {visibleCategories.length > 0 ? (<div className="space-y-6">{visibleCategories.map(category => (<div key={category.name}><h3 className="font-bold text-lg mb-3">{category.icon} {category.name}</h3><div className="space-y-2">{customer.documents.filter(doc => doc.category === category.name).map(file => (<div key={file.id} className="bg-gray-50 p-3 rounded-lg border flex justify-between items-center"><div className="flex items-center truncate"><FileIcon className="h-5 w-5 mr-3 flex-shrink-0 text-gray-500" /><span className="truncate font-medium text-gray-800">{file.name}</span></div><div className="flex items-center gap-2"><button onClick={() => setPreviewFile(file)} className="flex items-center bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg hover:bg-gray-300 transition-colors text-sm"><PreviewIcon className="h-4 w-4 mr-2" />Preview</button><a href={file.url} download className="flex items-center bg-red-800 text-white font-semibold py-1 px-3 rounded-lg hover:bg-red-700 transition-colors text-sm"><DownloadIcon className="h-4 w-4 mr-2" />Download</a></div></div>))}</div>{category.name === 'Transport' && <ItineraryTimeline itinerary={customer.itinerary} />}</div>))}</div>) : (<div className="text-center py-12"><p className="text-gray-500">No documents have been uploaded for you yet.</p></div>)}
                 <div className="mt-8 pt-4 border-t border-gray-200"><div className="flex items-center justify-center text-sm text-gray-500 bg-gray-50 p-3 rounded-lg"><InfoIcon className="h-5 w-5 mr-3 flex-shrink-0" />For your security, access to this portal will expire on {getExpiryDate()}. Please download any documents you wish to keep.</div></div>
             </div>
             {previewFile && (<div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"><div className="bg-white rounded-lg shadow-2xl w-full h-full max-w-4xl max-h-[90vh] flex flex-col"><div className="flex justify-between items-center p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg truncate">{previewFile.name}</h3><button onClick={() => setPreviewFile(null)} className="text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6" /></button></div><div className="flex-grow p-2">{previewFile.url.toLowerCase().endsWith('.jpg') ? (<img src={previewFile.url} alt="Document Preview" className="w-full h-full object-contain" />) : (<iframe src={previewFile.url} title="Document Preview" className="w-full h-full border-0"></iframe>)}</div></div></div>)}
