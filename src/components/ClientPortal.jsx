@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { piyamTravelLogoBase64, fileCategories } from '../data';
-// Correctly import all necessary icons, including the new ones
 import { UserIcon, PhoneIcon, MailIcon, SimCardIcon, GlobeIcon, FileIcon, DownloadIcon, InfoIcon, PreviewIcon, XIcon } from './Icons';
 
 const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo"/> );
@@ -145,15 +144,16 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
                     </div>
                 </div>
 
-                <div className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-700 dark:border-slate-600">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4 dark:text-slate-200">Key Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm text-slate-700 dark:text-slate-300">
-                        <div className="flex items-start gap-3"><UserIcon className="h-5 w-5 mt-1 text-slate-500"/><div><p className="font-semibold">Your Agent</p><p>{keyInfo.agentName}</p><p>{keyInfo.agentContact}</p><p className="text-xs italic mt-1">{keyInfo.whatsAppNotes}</p></div></div>
-                        <div className="flex items-start gap-3"><GlobeIcon className="h-5 w-5 mt-1 text-slate-500"/><div><p className="font-semibold">Ground Transport Manager</p><p>{keyInfo.groundTransportManager}</p></div></div>
-                        <div className="flex items-start gap-3"><SimCardIcon className="h-5 w-5 mt-1 text-slate-500"/><div><label className="font-semibold">Your Local SIM Number</label><input type="text" value={localSim} onChange={(e) => setLocalSim(e.target.value)} placeholder="Enter your local number" className="w-full mt-1 p-1 border rounded text-black dark:bg-gray-800 dark:border-gray-600 dark:text-white" /></div></div>
-                        <div className="flex items-start gap-3"><MailIcon className="h-5 w-5 mt-1 text-slate-500"/><div><label className="font-semibold">Your Email Address</label><input type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)} placeholder="Enter your email" className={`w-full mt-1 p-1 border rounded text-black dark:bg-gray-800 dark:border-gray-600 dark:text-white ${!isEmailEditable ? 'bg-gray-200 dark:bg-gray-700' : ''}`} disabled={!isEmailEditable} /></div></div>
+                {/* --- Key Information Card (Maroon Theme) --- */}
+                <div className="mb-8 p-4 bg-red-800 text-white rounded-lg">
+                    <h3 className="text-lg font-bold mb-4">Key Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                        <div className="flex items-start gap-3"><UserIcon className="h-5 w-5 mt-1 opacity-75"/><div><p className="font-semibold">Your Agent</p><p className="opacity-90">{keyInfo.agentName}</p><p className="opacity-90">{keyInfo.agentContact}</p><p className="text-xs italic mt-1 opacity-75">{keyInfo.whatsAppNotes}</p></div></div>
+                        <div className="flex items-start gap-3"><GlobeIcon className="h-5 w-5 mt-1 opacity-75"/><div><p className="font-semibold">Ground Transport Manager</p><p className="opacity-90">{keyInfo.groundTransportManager}</p></div></div>
+                        <div className="flex items-start gap-3"><SimCardIcon className="h-5 w-5 mt-1 opacity-75"/><div><label className="font-semibold">Your Local SIM Number</label><input type="text" value={localSim} onChange={(e) => setLocalSim(e.target.value)} placeholder="Enter your local number" className="w-full mt-1 p-1 border rounded bg-white bg-opacity-20 border-white border-opacity-30" /></div></div>
+                        <div className="flex items-start gap-3"><MailIcon className="h-5 w-5 mt-1 opacity-75"/><div><label className="font-semibold">Your Email Address</label><input type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)} placeholder="Enter your email" className={`w-full mt-1 p-1 border rounded bg-white bg-opacity-20 border-white border-opacity-30 ${!isEmailEditable ? 'bg-black bg-opacity-20 cursor-not-allowed' : ''}`} disabled={!isEmailEditable} /></div></div>
                     </div>
-                    <button onClick={handleSaveContactInfo} className="mt-4 bg-slate-600 text-white font-semibold py-1 px-3 rounded-lg hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-400">Save My Info</button>
+                    <button onClick={handleSaveContactInfo} className="mt-4 bg-white text-red-800 font-semibold py-1 px-3 rounded-lg hover:bg-gray-200">Save My Info</button>
                 </div>
 
                 {checklist.length > 0 && (<div className="mb-8"><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Your Pre-Travel Checklist</h2><button onClick={() => setIsChecklistVisible(!isChecklistVisible)} className="text-sm font-semibold text-red-800 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300">{isChecklistVisible ? 'Hide' : 'Show'}</button></div>{isChecklistVisible && (<div className="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg border border-slate-200 dark:border-slate-600 space-y-3">{checklist.map(item => (<label key={item.id} className="flex items-center cursor-pointer p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"><input type="checkbox" checked={item.completed} onChange={() => handleChecklistItemToggle(item.id)} className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500" /><span className={`ml-3 text-gray-700 dark:text-gray-300 ${item.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''}`}>{item.text}</span></label>))}</div>)}</div>)}
@@ -164,14 +164,14 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
                         {visibleCategories.map(category => (
                             <div key={category.name} className="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
                                 <h3 className="font-bold text-lg mb-4">{category.icon} {category.name}</h3>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {customer.documents.filter(doc => doc.category === category.name).map(file => (
-                                        <div key={file.id} className="bg-white dark:bg-gray-800 p-3 rounded-lg border dark:border-gray-700 flex justify-between items-center">
-                                            <div className="flex items-center truncate">
+                                        <div key={file.id} className="bg-white dark:bg-gray-800 p-3 rounded-lg border dark:border-gray-700">
+                                            <div className="flex items-center truncate mb-3">
                                                 <FileIcon className="h-5 w-5 mr-3 flex-shrink-0 text-gray-500" />
                                                 <span className="truncate font-medium text-gray-800 dark:text-gray-200">{file.name}</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center justify-end gap-2">
                                                 <button onClick={() => setPreviewFile(file)} className="flex items-center bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg hover:bg-gray-300 transition-colors text-sm dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"><PreviewIcon className="h-4 w-4 mr-2" />Preview</button>
                                                 <a href={file.url} download className="flex items-center bg-red-800 text-white font-semibold py-1 px-3 rounded-lg hover:bg-red-700 transition-colors text-sm"><DownloadIcon className="h-4 w-4 mr-2" />Download</a>
                                             </div>
