@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { piyamTravelLogoBase64, fileCategories } from '../data';
-import { UserIcon, PhoneIcon, MailIcon, SimCardIcon, GlobeIcon, FileIcon, DownloadIcon, InfoIcon, PreviewIcon, XIcon } from './Icons'; // Assuming you add these new icons
+// Correctly import all necessary icons, including the new ones
+import { UserIcon, PhoneIcon, MailIcon, SimCardIcon, GlobeIcon, FileIcon, DownloadIcon, InfoIcon, PreviewIcon, XIcon } from './Icons';
 
 const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo"/> );
 
-// --- Updated Login Page with a softer look ---
 const ClientLoginPage = ({ onLogin, setIsLoading }) => {
     const [refNumber, setRefNumber] = useState('');
     const [lastName, setLastName] = useState('');
@@ -65,7 +65,6 @@ const ClientLoginPage = ({ onLogin, setIsLoading }) => {
     );
 };
 
-// --- Updated Dashboard with improved visual hierarchy ---
 const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
     const [previewFile, setPreviewFile] = useState(null);
     const [isChecklistVisible, setIsChecklistVisible] = useState(true);
@@ -134,7 +133,6 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
     return (
         <>
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 w-full">
-                {/* --- Header Section --- */}
                 <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4 border-b border-gray-200 dark:border-gray-700 pb-6">
                     <div>
                         <p className="text-gray-500 font-mono text-sm">Reference: {customer.referenceNumber}</p>
@@ -147,7 +145,6 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
                     </div>
                 </div>
 
-                {/* --- Key Information with Icons --- */}
                 <div className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-700 dark:border-slate-600">
                     <h3 className="text-lg font-bold text-slate-800 mb-4 dark:text-slate-200">Key Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm text-slate-700 dark:text-slate-300">
@@ -159,10 +156,8 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
                     <button onClick={handleSaveContactInfo} className="mt-4 bg-slate-600 text-white font-semibold py-1 px-3 rounded-lg hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-400">Save My Info</button>
                 </div>
 
-                {/* --- Checklist --- */}
                 {checklist.length > 0 && (<div className="mb-8"><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Your Pre-Travel Checklist</h2><button onClick={() => setIsChecklistVisible(!isChecklistVisible)} className="text-sm font-semibold text-red-800 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300">{isChecklistVisible ? 'Hide' : 'Show'}</button></div>{isChecklistVisible && (<div className="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg border border-slate-200 dark:border-slate-600 space-y-3">{checklist.map(item => (<label key={item.id} className="flex items-center cursor-pointer p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"><input type="checkbox" checked={item.completed} onChange={() => handleChecklistItemToggle(item.id)} className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500" /><span className={`ml-3 text-gray-700 dark:text-gray-300 ${item.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''}`}>{item.text}</span></label>))}</div>)}</div>)}
                 
-                {/* --- Documents Section with Card layout --- */}
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Your Documents</h2>
                 {visibleCategories.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -188,7 +183,6 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
                     </div>
                 ) : (<div className="text-center py-12"><p className="text-gray-500">No documents have been uploaded for you yet.</p></div>)}
 
-                {/* --- Footer and Expiry Notice --- */}
                 <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-center text-sm text-gray-500 bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
                         <InfoIcon className="h-5 w-5 mr-3 flex-shrink-0" />
@@ -198,13 +192,11 @@ const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
                 </div>
             </div>
 
-            {/* --- Preview Modal (no changes) --- */}
             {previewFile && (<div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"><div className="bg-white rounded-lg shadow-2xl w-full h-full max-w-4xl max-h-[90vh] flex flex-col"><div className="flex justify-between items-center p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg truncate">{previewFile.name}</h3><button onClick={() => setPreviewFile(null)} className="text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6" /></button></div><div className="flex-grow p-2">{previewFile.url.toLowerCase().endsWith('.jpg') ? (<img src={previewFile.url} alt="Document Preview" className="w-full h-full object-contain" />) : (<iframe src={previewFile.url} title="Document Preview" className="w-full h-full border-0"></iframe>)}</div></div></div>)}
         </>
     );
 };
 
-// --- Main Portal Component (no changes to logic) ---
 export default function ClientPortal() {
     const [loggedInCustomer, setLoggedInCustomer] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
