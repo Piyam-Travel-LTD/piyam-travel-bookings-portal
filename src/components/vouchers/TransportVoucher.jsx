@@ -100,7 +100,10 @@ export const TransportVoucher = ({ customer, voucherData }) => {
                         <div><p style={{ fontSize: '12px', color: '#fecaca', margin: 0 }}>PASSENGER</p><p style={{ fontWeight: '600', margin: 0 }}>{customer.firstName} {customer.lastName}</p></div>
                         <div><p style={{ fontSize: '12px', color: '#fecaca', margin: 0 }}>REFERENCE</p><p style={{ fontWeight: '600', margin: 0 }}>{customer.referenceNumber}</p></div>
                         <div><p style={{ fontSize: '12px', color: '#fecaca', margin: 0 }}>BOOKING ID</p><p style={{ fontWeight: '600', margin: 0 }}>{voucherData.bookingId || 'N/A'}</p></div>
-                        <div><p style={{ fontSize: '12px', color: '#fecaca', margin: 0 }}>VEHICLE</p><p style={{ fontWeight: '600', margin: 0 }}>GMC / Hyundai Staria</p></div>
+                        <div>
+                            <p style={{ fontSize: '12px', color: '#fecaca', margin: 0 }}>VEHICLE</p>
+                            <p style={{ fontWeight: '600', margin: 0 }}>{voucherData.vehicle}</p>
+                        </div>
                         <div><p style={{ fontSize: '12px', color: '#fecaca', margin: 0 }}>BAGGAGE</p><p style={{ fontWeight: '600', fontSize: '12px', margin: 0 }}>{voucherData.maxBags} Bags Max ({voucherData.extraBaggageFee})</p></div>
                     </div>
                 </div>
