@@ -23,26 +23,37 @@ const ItineraryItem = ({ item, index, onUpdate, onRemove }) => {
     );
 };
 
+// --- Vehicle Options ---
+const vehicleTypes = [
+    { name: 'Car', passengers: 4, bags: 3 },
+    { name: 'H1', passengers: 6, bags: 6 },
+    { name: 'Hiace', passengers: 13, bags: 13 },
+    { name: 'Coaster', passengers: 18, bags: 18 },
+    { name: 'Coach', passengers: 52, bags: 52 },
+];
+
 export default function TransportVoucherModal({ isOpen, onClose, customer, onSave }) {
-    // Initial state setup
+    const defaultVehicle = vehicleTypes[1]; // Default to H1
+
     const [formData, setFormData] = useState({
         bookingId: '',
-        passengers: '2 Adults, 0 Children',
+        passengers: `${defaultVehicle.passengers} Adults, 0 Children`,
         flightNumber: 'EK007',
         airports: 'LHR to JED',
-        landingDate: '2025-09-15',
+        landingDate: new Date().toISOString().split('T')[0],
         landingTime: '22:30',
-        maxBags: '4',
+        vehicle: defaultVehicle.name,
+        maxBags: defaultVehicle.bags.toString(),
         extraBaggageFee: '50 SAR per bag',
         providerName: 'Barakat AlMusafar Trading',
         providerContact: '+966555049005',
     });
     
-    // State for the dynamic itinerary
     const [itinerary, setItinerary] = useState([
-        { type: 'Airport Pickup', description: 'JED Airport to Makkah Hotel', date: '2025-09-15', time: '23:30' }
+        { type: 'Airport Pickup', description: 'JED Airport to Makkah Hotel', date: new Date().toISOString().split('T')[0], time: '23:30' }
     ]);
-
+    
+    const [overrideBaggage, setOverrideBaggage] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isPreviewing, setIsPreviewing] = useState(false);
 
@@ -50,6 +61,23 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
 
     const handleFormChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleVehicleChange = (e) => {
+        const selectedVehicleName = e.target.value;
+        const selectedVehicle = vehicleTypes.find(v => v.name === selectedVehicleName);
+        if (selectedVehicle) {
+            const newFormData = {
+                ...formData,
+                vehicle: selectedVehicle.name,
+                passengers: `${selectedVehicle.passengers} Adults, 0 Children`,
+            };
+            // Only update baggage if override is NOT active
+            if (!overrideBaggage) {
+                newFormData.maxBags = selectedVehicle.bags.toString();
+            }
+            setFormData(newFormData);
+        }
     };
 
     const handleItineraryChange = (index, updatedItem) => {
@@ -92,23 +120,50 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
                     </div>
                 ) : (
                     <div className="grid md:grid-cols-2 gap-8 overflow-y-auto flex-grow pr-2">
-                        {/* Left Column for Main Details */}
                         <div className="space-y-4 text-sm">
-                            {Object.keys(formData).map(key => (
-                                <div key={key}>
-                                    <label className="block font-medium text-gray-700 dark:text-gray-300 capitalize">{key.replace(/([A-Z])/g, ' $1')}</label>
-                                    <input
-                                        type={key.includes('Date') ? 'date' : key.includes('Time') ? 'time' : 'text'}
-                                        name={key}
-                                        value={formData[key]}
-                                        onChange={handleFormChange}
-                                        className="mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900"
-                                    />
+                            <div>
+                                <label className="block font-medium text-gray-700 dark:text-gray-300">Vehicle Type</label>
+                                <select name="vehicle" value={formData.vehicle} onChange={handleVehicleChange} className="mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900">
+                                    {vehicleTypes.map(v => <option key={v.name} value={v.name}>{v.name} ({v.passengers} pax, {v.bags} bags)</option>)}
+                                </select>
+                            </div>
+
+                            {Object.entries(formData).map(([key, value]) => {
+                                if (key === 'vehicle' || key === 'maxBags' || key === 'extraBaggageFee') return null;
+                                const label = key.replace(/([A-Z])/g, ' $1');
+                                return (
+                                    <div key={key}>
+                                        <label className="block font-medium text-gray-700 dark:text-gray-300 capitalize">{label}</label>
+                                        <input
+                                            type={key.includes('Date') ? 'date' : key.includes('Time') ? 'time' : 'text'}
+                                            name={key}
+                                            value={value}
+                                            onChange={handleFormChange}
+                                            readOnly={key === 'passengers'}
+                                            className={`mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900 ${key === 'passengers' ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                                        />
+                                    </div>
+                                );
+                            })}
+                            
+                            {/* --- Baggage Override Section --- */}
+                            <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={overrideBaggage} onChange={(e) => setOverrideBaggage(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500" />
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">Manually override baggage allowance</span>
+                                </label>
+
+                                <div>
+                                    <label className="block font-medium text-gray-700 dark:text-gray-300">Max Bags</label>
+                                    <input type="text" name="maxBags" value={formData.maxBags} onChange={handleFormChange} readOnly={!overrideBaggage} className={`mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900 ${!overrideBaggage ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`} />
                                 </div>
-                            ))}
+                                <div>
+                                    <label className="block font-medium text-gray-700 dark:text-gray-300">Extra Baggage Fee</label>
+                                    <input type="text" name="extraBaggageFee" value={formData.extraBaggageFee} onChange={handleFormChange} readOnly={!overrideBaggage} className={`mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900 ${!overrideBaggage ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`} />
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Right Column for Dynamic Itinerary */}
                         <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg flex flex-col">
                             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Itinerary Builder</h3>
                             <div className="space-y-3 flex-grow overflow-y-auto pr-2">
