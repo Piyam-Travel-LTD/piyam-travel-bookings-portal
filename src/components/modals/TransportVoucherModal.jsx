@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XIcon } from '../Icons';
 import { TransportVoucher } from '../vouchers/TransportVoucher';
 
@@ -37,7 +37,9 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
 
     const [formData, setFormData] = useState({
         bookingId: '',
-        passengers: `${defaultVehicle.passengers} Adults, 0 Children`,
+        adults: defaultVehicle.passengers,
+        children: 0,
+        infants: 0,
         flightNumber: 'EK007',
         airports: 'LHR to JED',
         landingDate: new Date().toISOString().split('T')[0],
@@ -54,13 +56,31 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
     ]);
     
     const [overrideBaggage, setOverrideBaggage] = useState(false);
+    const [passengerError, setPassengerError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isPreviewing, setIsPreviewing] = useState(false);
+
+    // Effect for passenger validation
+    useEffect(() => {
+        const selectedVehicle = vehicleTypes.find(v => v.name === formData.vehicle);
+        const totalPassengers = (formData.adults || 0) + (formData.children || 0);
+
+        if (selectedVehicle && totalPassengers > selectedVehicle.passengers) {
+            setPassengerError(`Exceeds capacity of ${selectedVehicle.passengers}. Please select a larger vehicle.`);
+        } else {
+            setPassengerError('');
+        }
+    }, [formData.adults, formData.children, formData.vehicle]);
+
 
     if (!isOpen) return null;
 
     const handleFormChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value, type } = e.target;
+        setFormData({ 
+            ...formData, 
+            [name]: type === 'number' ? parseInt(value, 10) : value 
+        });
     };
 
     const handleVehicleChange = (e) => {
@@ -70,9 +90,10 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
             const newFormData = {
                 ...formData,
                 vehicle: selectedVehicle.name,
-                passengers: `${selectedVehicle.passengers} Adults, 0 Children`,
+                adults: selectedVehicle.passengers, // Default adults to max capacity
+                children: 0,
+                infants: 0
             };
-            // Only update baggage if override is NOT active
             if (!overrideBaggage) {
                 newFormData.maxBags = selectedVehicle.bags.toString();
             }
@@ -96,8 +117,20 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
     };
 
     const handleSaveClick = async () => {
+        if (passengerError) {
+            alert("Please resolve the passenger capacity error before saving.");
+            return;
+        }
+
         setIsSaving(true);
-        const success = await onSave({ ...formData, itinerary });
+        // Construct the passenger string for the voucher
+        const passengerString = `${formData.adults} Adults, ${formData.children} Children${formData.infants > 0 ? `, ${formData.infants} Infants` : ''}`;
+        const finalVoucherData = {
+            ...formData,
+            passengers: passengerString
+        };
+
+        const success = await onSave({ ...finalVoucherData, itinerary });
         setIsSaving(false);
         if (success) {
             onClose(); 
@@ -115,7 +148,7 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
                 {isPreviewing ? (
                     <div className="flex-grow overflow-y-auto flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
                        <div className="transform scale-90 origin-top">
-                         <TransportVoucher customer={customer} voucherData={{ ...formData, itinerary }} />
+                         <TransportVoucher customer={customer} voucherData={{ ...formData, itinerary, passengers: `${formData.adults} Adults, ${formData.children} Children${formData.infants > 0 ? `, ${formData.infants} Infants` : ''}` }} />
                        </div>
                     </div>
                 ) : (
@@ -128,8 +161,28 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
                                 </select>
                             </div>
 
+                            {/* --- Passenger Inputs --- */}
+                            <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                <label className="block font-medium text-gray-700 dark:text-gray-300">Passengers (Infants do not count towards seat capacity)</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label className="block text-xs text-gray-500">Adults</label>
+                                        <input type="number" name="adults" value={formData.adults} onChange={handleFormChange} min="0" className={`mt-1 w-full border rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900 ${passengerError ? 'border-red-500' : 'border-gray-300 dark:border-gray-500'}`} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-500">Children</label>
+                                        <input type="number" name="children" value={formData.children} onChange={handleFormChange} min="0" className={`mt-1 w-full border rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900 ${passengerError ? 'border-red-500' : 'border-gray-300 dark:border-gray-500'}`} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-500">Infants</label>
+                                        <input type="number" name="infants" value={formData.infants} onChange={handleFormChange} min="0" className="mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900" />
+                                    </div>
+                                </div>
+                                {passengerError && <p className="text-red-500 text-xs mt-1">{passengerError}</p>}
+                            </div>
+
                             {Object.entries(formData).map(([key, value]) => {
-                                if (key === 'vehicle' || key === 'maxBags' || key === 'extraBaggageFee') return null;
+                                if (['vehicle', 'adults', 'children', 'infants', 'maxBags', 'extraBaggageFee'].includes(key)) return null;
                                 const label = key.replace(/([A-Z])/g, ' $1');
                                 return (
                                     <div key={key}>
@@ -139,20 +192,17 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
                                             name={key}
                                             value={value}
                                             onChange={handleFormChange}
-                                            readOnly={key === 'passengers'}
-                                            className={`mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900 ${key === 'passengers' ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                                            className="mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900"
                                         />
                                     </div>
                                 );
                             })}
                             
-                            {/* --- Baggage Override Section --- */}
                             <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" checked={overrideBaggage} onChange={(e) => setOverrideBaggage(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500" />
                                     <span className="font-medium text-gray-700 dark:text-gray-300">Manually override baggage allowance</span>
                                 </label>
-
                                 <div>
                                     <label className="block font-medium text-gray-700 dark:text-gray-300">Max Bags</label>
                                     <input type="text" name="maxBags" value={formData.maxBags} onChange={handleFormChange} readOnly={!overrideBaggage} className={`mt-1 w-full border border-gray-300 dark:border-gray-500 rounded-lg p-2 focus:ring-red-800 focus:border-red-800 dark:bg-gray-900 ${!overrideBaggage ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`} />
@@ -185,12 +235,12 @@ export default function TransportVoucherModal({ isOpen, onClose, customer, onSav
                     {isPreviewing ? (
                         <>
                             <button onClick={() => setIsPreviewing(false)} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Back to Edit</button>
-                            <button onClick={handleSaveClick} disabled={isSaving} className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 disabled:bg-red-300 w-48">
+                            <button onClick={handleSaveClick} disabled={isSaving || !!passengerError} className="bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed w-48">
                                 {isSaving ? 'Saving...' : 'Confirm & Save'}
                             </button>
                         </>
                     ) : (
-                        <button onClick={() => setIsPreviewing(true)} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 w-48">
+                        <button onClick={() => setIsPreviewing(true)} disabled={!!passengerError} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed w-48">
                             Preview Voucher
                         </button>
                     )}
