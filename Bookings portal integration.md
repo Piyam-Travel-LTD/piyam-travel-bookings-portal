@@ -1,10 +1,10 @@
 # Bookings Portal Integration for PT-Portal Packages
 
-**Status:** Repository implementation complete; deployment and live acceptance pending
+**Status:** Preview deployed; live acceptance and production promotion pending
 
 **Created:** August 8, 2026
 
-**Implementation checkpoint:** August 8, 2026
+**Implementation checkpoint:** August 9, 2026
 
 **Customer Portal:** `https://bookings.piyamtravel.com`
 
@@ -16,7 +16,9 @@
 
 The repository now implements the Phase 1 and Phase 2 customer experience plus the secure cookie/session portion of Phase 3. Automated server, adapter, session, and client-contract tests pass together with the production build through `npm run check`.
 
-The remaining release gates require access outside this checkout: configure and deploy Vercel Preview/Production; validate a real released PT package, QR link, and legacy fallback; confirm revoked or disabled PT packages cannot reopen stale legacy data; confirm PT-Portal rate-limit identity when requests arrive through the bookings proxy; and approve Vercel edge-log handling for the initial token-bearing route. Track those checks in `docs/deployment-checklist.md`; repository build success alone does not complete the production release.
+Preview checkpoint: commit `9e93d13` is published in draft PR `#8`; both GitHub CI runs and the Vercel deployment check pass. The Vercel Preview has the PT endpoint, request timeout, and a Preview-specific package-session secret configured. Credential-free smoke tests passed for `/`, `/documents`, `/package-documents/:token`, controlled package API errors, live PT package-data connectivity, PT-first reference access, legacy not-found handling, and session logout/security headers.
+
+The remaining release gates require authorized live data or production coordination: validate a real released PT package, QR link, and legacy fallback; confirm revoked or disabled PT packages cannot reopen stale legacy data; confirm PT-Portal rate-limit identity when requests arrive through the bookings proxy; approve Vercel edge-log handling for the initial token-bearing route; set PT-Portal's `NEXT_PUBLIC_BOOKINGS_PORTAL_URL` during the coordinated production promotion; and complete production smoke testing. Track those checks in `docs/deployment-checklist.md`; repository and Preview success alone do not complete the production release.
 
 ---
 
