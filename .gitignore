@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Local environment files can contain server credentials.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local Vercel project metadata.
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

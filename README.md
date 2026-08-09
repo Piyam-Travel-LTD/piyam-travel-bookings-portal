@@ -1,111 +1,133 @@
-# Piyam Travel Portal
+# Piyam Travel Bookings Portal
 
-A secure, web-based portal for Piyam Travel agents to manage customer travel packages and for customers to securely access their documents.
+The customer-facing portal at bookings.piyamtravel.com provides access to travel-package documents while the business moves from legacy Firebase folders to PT-Portal packages.
 
-This project consists of two main parts: a secure **Agent Dashboard** for managing client data and a simple **Client Portal** for viewing and downloading documents.
+New packages are owned and managed in PT-Portal. This repository remains responsible for the customer interface, same-origin serverless adapters, and temporary read access to legacy Firebase and Cloudflare R2 records. The <code>/agent</code> route is a legacy migration tool and must not become a second source of truth for new PT packages.
 
----
+## Application routes
 
-## Features
+- <code>/</code> accepts a package reference and lead passenger surname.
+- <code>/package-documents/:token</code> supports PT-Portal access vouchers and transport-voucher QR codes.
+- <code>/documents</code> is the token-free URL used after a secure package session is established.
+- <code>/agent</code> provides the temporary Firebase agent dashboard for legacy folders.
 
-#### Agent Dashboard
-- Create unique, reference-numbered folders for each customer.
-- Search and filter customer folders by name or reference number.
-- Upload and manage documents (`.pdf`, `.jpg`) across multiple categories (Flights, Hotels, Visa, etc.).
-- Delete documents from a customer's folder.
-- Generate a shareable Access Voucher with a QR code for easy client access.
+The browser calls only same-origin <code>/api</code> endpoints. Serverless functions contact PT-Portal, Firebase Admin, Cloudflare R2, and Mailgun with server-only credentials.
 
-#### Client Portal
-- Secure login using a unique Reference Number and the customer's Last Name.
-- A clean, read-only dashboard displaying all relevant travel documents.
-- Categories are dynamically hidden if they contain no documents.
-- "Download" button for each file.
-- An automated 10-month access expiry notification for security.
+## Requirements
 
----
+- Node.js 20 or newer
+- npm
+- Git
+- Vercel CLI or a linked Vercel project when testing serverless functions locally
+- Access to the required development or preview credentials
 
-## Technology Stack
+Current dependency resolutions include packages that require Node 20. Do not use Node 18 for installation, local verification, or deployment.
 
-This project is built with a modern, serverless architecture to keep costs at a minimum while ensuring high performance and security.
+## Local setup
 
-- **Frontend:** React, Vite, Tailwind CSS
-- **Database:** Google Firestore
-- **File Storage:** Cloudflare R2 (10GB Free Tier)
-- **Hosting & Backend Functions:** Vercel
-- **Authentication:** Google Firebase Authentication
+1. Clone and enter the repository.
 
----
+       git clone https://github.com/Piyam-Travel-LTD/piyam-travel-bookings-portal.git
+       cd piyam-travel-bookings-portal
 
-## Setup and Installation
+2. Install dependencies.
 
-Follow these steps to get the project running on your local machine for development and testing.
+       npm install
 
-### Prerequisites
+3. Create a local environment file and replace every required placeholder.
 
-- [Node.js](https://nodejs.org/) (version 18.x or higher)
-- [Git](https://git-scm.com/)
-- A code editor like [Visual Studio Code](https://code.visualstudio.com/)
+       cp .env.example .env.local
 
-### 1. Clone the Repository
+4. Generate a unique session secret of at least 32 random characters. For example:
 
-First, clone the code from your GitHub repository to your local machine.
-```
-git clone [https://github.com/YOUR_USERNAME/piyam-travel-portal.git](https://github.com/YOUR_USERNAME/piyam-travel-portal.git)
-cd piyam-travel-portal
-```
+       openssl rand -base64 48
 
-### 2. Install Dependencies
-Install all the necessary project libraries using npm.
-```
-npm install
-```
+   Put the result in <code>PACKAGE_PORTAL_SESSION_SECRET</code>. Never reuse production secrets in local or preview environments.
 
-### 3. Set Up Environment Variables
+5. Run the frontend-only Vite server when API calls are not needed.
 
-For the application to connect to your backend services, you need to provide your secret keys in a local environment file.
+       npm run dev
 
-In the root of your `piyam-travel-portal folder`, create a new file named `.env`.
+6. Use Vercel development mode for end-to-end work involving <code>/api/package-access</code>, <code>/api/package-data</code>, or <code>/api/package-session</code>.
 
-Copy the content below into the `.env` file and replace the placeholder values with your actual credentials.
+       npx vercel dev
 
-**.env file contents:**
-```
-# Firebase Configuration
-VITE_FIREBASE_API_KEY="AIzaSyA..._w"
-VITE_FIREBASE_AUTH_DOMAIN="piyam-travel-portal.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="piyam-travel-portal"
-VITE_FIREBASE_STORAGE_BUCKET="piyam-travel-portal.appspot.com"
-VITE_FIREBASE_MESSAGING_SENDER_ID="123456789012"
-VITE_FIREBASE_APP_ID="1:123456789012:web:abcdef1234567890"
+7. Run the automated contract tests and verify the production bundle before opening a pull request or deploying.
 
-# Cloudflare R2 Configuration (These are used by your Vercel functions)
-CLOUDFLARE_ACCOUNT_ID="YOUR_CLOUDFLARE_ACCOUNT_ID"
-R2_ACCESS_KEY_ID="YOUR_R2_ACCESS_KEY_ID"
-R2_SECRET_ACCESS_KEY="YOUR_R2_SECRET_ACCESS_KEY"
-R2_BUCKET_NAME="piyam-travel-documents"
-R2_PUBLIC_URL="YOUR_R2_PUBLIC_URL"
+       npm run check
 
-# Mailgun Configuration (For sending emails)
-MAILGUN_API_KEY="YOUR_MAILGUN_PRIVATE_API_KEY"
-MAILGUN_DOMAIN="YOUR_MAILGUN_DOMAIN" # e.g., mg.yourwebsite.com
-MAILGUN_SENDER_EMAIL="Piyam Travel <noreply@yourmaildomain.com>" # The 'From' address for emails
-```
-**Note:** The `VITE_` prefix is important. It tells Vite to make these variables securely available to your front-end code.
+Vite alone does not emulate the Vercel serverless functions. PT package login, direct-token routes, and legacy fallback require the full local Vercel runtime or a preview deployment.
 
-## Running the Application
-Once the setup is complete, you can start the local development server.
-```
-npm run dev
-```
-This will launch the application, and you can view it in your web browser at `http://localhost:5173` (or a similar address).
+## Environment configuration
+
+Use [.env.example](.env.example) as the inventory. Local <code>.env</code> variants are ignored by Git. Configure runtime values separately in Vercel for Preview and Production, then redeploy so the functions receive the updated values.
+
+### PT-Portal integration
+
+| Variable | Scope | Purpose |
+| --- | --- | --- |
+| <code>PT_PORTAL_BASE_URL</code> | Server-only, required | PT-Portal production or preview origin, without a trailing slash. Production must use HTTPS. |
+| <code>PT_PORTAL_REQUEST_TIMEOUT_MS</code> | Server-only | Upstream request timeout in milliseconds; defaults to 10000. |
+| <code>PACKAGE_PORTAL_SESSION_SECRET</code> | Server-only, required for hardened sessions | At least 32 random characters used to encrypt the <code>HttpOnly</code> package-session cookie. Without it, the portal falls back to keeping the token only in in-memory React state. |
+| <code>PT_PORTAL_INTEGRATION_SECRET</code> | Server-only, future optional | Shared request-signing secret. Leave unset until signing is implemented and coordinated in both repositories. |
+
+Do not add Supabase service-role keys, MinIO credentials, document tokens, or customer details to this project’s browser environment.
+
+### Legacy Firebase
+
+The following Firebase Admin variables are server secrets required by the legacy lookup, folder management, and purge functions:
+
+- <code>FIREBASE_PROJECT_ID</code>
+- <code>FIREBASE_CLIENT_EMAIL</code>
+- <code>FIREBASE_PRIVATE_KEY</code>, stored with literal <code>\n</code> line breaks as shown in the example
+
+The browser Firebase configuration currently lives in <code>src/firebase.js</code>. It is public client configuration and is not equivalent to a Firebase Admin credential. The example inventories the conventional <code>VITE_FIREBASE_*</code> names, but the current source does not read them; changing those environment values alone will not change the browser Firebase project.
+
+Any value prefixed with <code>VITE_</code> is embedded into the client bundle and can be read by portal visitors. Never place private keys, integration secrets, R2 credentials, Mailgun credentials, session secrets, or service-role keys in a <code>VITE_</code> variable.
+
+### Legacy Cloudflare R2
+
+The serverless upload, delete, voucher, and purge functions use:
+
+- <code>R2_ACCESS_KEY_ID</code>
+- <code>R2_SECRET_ACCESS_KEY</code>
+- <code>R2_BUCKET_NAME</code>
+- <code>R2_PUBLIC_URL</code>
+
+The current R2 endpoint is configured directly in the API modules, so <code>CLOUDFLARE_ACCOUNT_ID</code> is not consumed. Production <code>R2_PUBLIC_URL</code> must use HTTPS to prevent mixed-content failures.
+
+### Legacy Mailgun and purge automation
+
+- <code>MAILGUN_API_KEY</code>, <code>MAILGUN_DOMAIN</code>, and <code>MAILGUN_SENDER_EMAIL</code> support legacy completion email.
+- <code>CRON_SECRET</code> protects <code>/api/purge-old-folders</code>. The same value must exist as the GitHub Actions repository secret named <code>CRON_SECRET</code>.
+
+### Required PT-Portal setting
+
+In the PT-Portal deployment, configure:
+
+    NEXT_PUBLIC_BOOKINGS_PORTAL_URL=https://bookings.piyamtravel.com
+
+This value belongs to PT-Portal, not this repository. It controls generated customer links and transport-voucher QR codes.
+
+## Production security requirements
+
+- Both <code>https://bookings.piyamtravel.com</code> and <code>PT_PORTAL_BASE_URL</code> must have valid HTTPS certificates.
+- All customer document URLs must use HTTPS. Do not deploy a production configuration that produces mixed content.
+- Keep every server credential out of <code>VITE_*</code> variables and Git history.
+- Use separate random secrets for local, Preview, and Production.
+- Treat package-document tokens as password-equivalent. Do not copy them into issue trackers, analytics, screenshots, or logs.
+- Verify that the proxy preserves the intended client-IP/rate-limit semantics without trusting a browser-supplied forwarding header.
+- Secure cookies require HTTPS in Preview and Production. Local HTTP testing does not prove production cookie behavior.
 
 ## Deployment
-This project is configured for easy deployment on Vercel.
 
-- Push your code to your GitHub repository.
+Follow the [deployment and smoke-test checklist](docs/deployment-checklist.md). A preview deployment must pass the source-routing, token-link, document, mobile, and security checks before production promotion.
 
-- Follow the steps we previously discussed to import and configure the project in your Vercel dashboard.
+Four release gates require external access and cannot be completed from this checkout alone:
 
-- Ensure you have added the same Environment Variables from your .env file into your Vercel project settings.
+1. Vercel Preview and Production environment variables must be configured and a deployment created.
+2. An authorized operator must validate a real released PT package by reference/surname and through its real access-voucher or transport-voucher QR link.
+3. PT-Portal ownership must confirm revoked/disabled-package fallback semantics and customer-specific rate limiting through the Vercel proxy.
+4. The Vercel owner must approve access, retention, and redaction controls for the initial token-bearing route in edge request logs.
 
-- Vercel will automatically build and deploy your application every time you push a new change to your GitHub repository.
+Do not mark the integration complete until both gates are recorded.
