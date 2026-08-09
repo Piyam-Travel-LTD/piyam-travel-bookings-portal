@@ -1,5 +1,18 @@
 import React from 'react';
 import { formatPortalDate } from '../../utils/packagePortal';
+import PackageSupportContacts from './PackageSupportContacts';
+import PackageTransportVoucher from './PackageTransportVoucher';
+import PersonalTravelChecklist from './PersonalTravelChecklist';
+
+const FINANCIAL_PUBLIC_INFO_FRAGMENTS = [
+  'price', 'amount', 'balance', 'deposit', 'currency', 'fare', 'quote', 'subtotal', 'grandtotal'
+];
+
+function isFinancialPublicInfoKey(key) {
+  const normalized = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+  return normalized === 'total' || normalized === 'paid' || normalized === 'outstanding' ||
+    FINANCIAL_PUBLIC_INFO_FRAGMENTS.some((fragment) => normalized.includes(fragment));
+}
 
 function formatSummaryLabel(key) {
   return String(key)
@@ -13,11 +26,27 @@ function formatSummaryValue(value) {
   return String(value);
 }
 
-export default function PackageOverview({ customer }) {
+function getExpiryNotice(value, now = Date.now()) {
+  if (!value) return null;
+  const expiresAt = new Date(value).getTime();
+  if (!Number.isFinite(expiresAt)) return null;
+  const daysRemaining = Math.ceil((expiresAt - now) / 86_400_000);
+  if (daysRemaining < 0) return 'Your package access has expired. Contact our office for help.';
+  if (daysRemaining === 0) return 'Your package access expires today. Download any documents you need.';
+  if (daysRemaining <= 30) return `Your package access expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Download any documents you need.`;
+  return null;
+}
+
+export default function PackageOverview({ customer, onOpenDocuments }) {
   const publicSummary = customer?.publicSummary && typeof customer.publicSummary === 'object'
-    ? Object.entries(customer.publicSummary).filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value))
+    ? Object.entries(customer.publicSummary).filter(([key, value]) =>
+      !isFinancialPublicInfoKey(key) && ['string', 'number', 'boolean'].includes(typeof value)
+    )
     : [];
   const checklist = Array.isArray(customer?.checklist) ? customer.checklist : [];
+  const documentCount = Array.isArray(customer?.documents) ? customer.documents.length : 0;
+  const expiryNotice = getExpiryNotice(customer?.accessExpiresAt);
+  const keyInformation = customer?.keyInformation || {};
 
   return (
     <section className="mb-6 space-y-4" aria-labelledby="package-overview-heading">
@@ -37,10 +66,33 @@ export default function PackageOverview({ customer }) {
           <h3 className="mb-2 text-lg font-bold">Package Status</h3>
           <dl className="space-y-1 text-sm text-gray-700 dark:text-gray-200">
             <div><dt className="inline font-semibold">Status: </dt><dd className="inline capitalize">{customer?.statusLabel || 'Open'}</dd></div>
-            <div><dt className="inline font-semibold">Customer email: </dt><dd className="inline break-all">{customer?.keyInformation?.customerEmail || 'Not supplied'}</dd></div>
+            <div><dt className="inline font-semibold">Released documents: </dt><dd className="inline">{documentCount}</dd></div>
           </dl>
+          {typeof onOpenDocuments === 'function' && (
+            <button
+              type="button"
+              onClick={onOpenDocuments}
+              className="mt-3 min-h-10 rounded-lg bg-red-800 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              {documentCount > 0 ? 'View released documents' : 'Check document releases'}
+            </button>
+          )}
         </div>
       </div>
+
+      {expiryNotice && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100" role="note">
+          {expiryNotice}
+        </div>
+      )}
+
+      <PackageSupportContacts
+        customerEmail={keyInformation.customerEmail}
+        customerPhone={keyInformation.customerPhone}
+        customerWhatsApp={keyInformation.customerWhatsApp}
+      />
+
+      {customer?.transportVoucher && <PackageTransportVoucher voucher={customer.transportVoucher} />}
 
       {publicSummary.length > 0 && (
         <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-600 dark:bg-gray-800">
@@ -58,7 +110,7 @@ export default function PackageOverview({ customer }) {
 
       {checklist.length > 0 && (
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-600 dark:bg-slate-700">
-          <h3 className="mb-3 font-bold text-gray-800 dark:text-gray-100">Travel checklist status</h3>
+          <h3 className="mb-3 font-bold text-gray-800 dark:text-gray-100">Booking checklist status</h3>
           <ul className="space-y-2" aria-label="Read-only travel checklist">
             {checklist.map((item, index) => (
               <li key={item.id || `checklist-${index}`} className="flex items-start gap-3 rounded-md bg-white p-3 dark:bg-gray-800">
@@ -79,6 +131,8 @@ export default function PackageOverview({ customer }) {
           <p className="mt-3 text-xs text-gray-500">This information is read-only. Contact your agent if anything needs changing.</p>
         </div>
       )}
+
+      <PersonalTravelChecklist reference={customer?.reference} />
     </section>
   );
 }

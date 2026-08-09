@@ -512,11 +512,10 @@ Recommended mobile-first sections:
 ```text
 Overview
 Documents
-Transport
 Invoice (only when released)
 ```
 
-Do not render an empty Invoice or Transport tab.
+Show the released transport summary inside Overview rather than as a separate tab. Do not render an empty Invoice tab.
 
 On mobile, use a compact sticky tab row or segmented navigation. Avoid a wide desktop grid compressed into the phone viewport.
 
@@ -595,7 +594,10 @@ For PT-Portal packages, these controls must not write to Firebase.
 Phase 1 recommendation:
 
 - render PT package checklist as read-only status
+- provide a separate personal checklist stored only in the customer's browser session and never sent to PT-Portal or Firebase
 - show customer email as read-only
+- prompt for a missing email or mobile/WhatsApp number and direct the customer to the office to update it securely
+- show the office's 24/7 emergency phone, WhatsApp, and email details on the customer overview
 - direct changes to the agent through WhatsApp
 - do not add customer-write APIs until the exact audit and validation rules are agreed
 

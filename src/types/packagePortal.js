@@ -99,7 +99,7 @@
  * @property {PortalTransportVoucher|null} transportVoucher
  * @property {PortalInvoice|null} releasedInvoice
  * @property {PortalChecklistItem[]} checklist
- * @property {{customerEmail: string, customerName: string}} keyInformation
+ * @property {{customerEmail: string, customerPhone: string, customerWhatsApp: string, customerName: string}} keyInformation
  * @property {number|null} signedUrlExpiresIn
  * @property {string} loadedAt ISO time when URLs were loaded.
  *

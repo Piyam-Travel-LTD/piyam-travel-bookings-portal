@@ -196,6 +196,30 @@ export function sanitizeJsonValue(value, depth = 0) {
   return output;
 }
 
+const PUBLIC_SUMMARY_FINANCIAL_FRAGMENTS = [
+  'price', 'amount', 'balance', 'deposit', 'currency', 'fare', 'quote', 'subtotal', 'grandtotal'
+];
+
+function isPublicSummaryFinancialKey(key) {
+  const normalized = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+  return normalized === 'total' || normalized === 'paid' || normalized === 'outstanding' ||
+    PUBLIC_SUMMARY_FINANCIAL_FRAGMENTS.some((fragment) => normalized.includes(fragment));
+}
+
+function removePublicSummaryPricing(value, depth = 0) {
+  if (depth > 8 || value == null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => removePublicSummaryPricing(item, depth + 1));
+  }
+
+  const output = {};
+  for (const [key, childValue] of Object.entries(value)) {
+    if (isPublicSummaryFinancialKey(key)) continue;
+    output[key] = removePublicSummaryPricing(childValue, depth + 1);
+  }
+  return output;
+}
+
 function sanitizeDocument(value) {
   if (!isPlainObject(value)) return null;
   if ('customer_visible' in value && value.customer_visible !== true) return null;
@@ -275,13 +299,21 @@ export function sanitizePackagePayload(payload) {
   }
 
   const publicSummary = isPlainObject(payload.package.current_public_summary)
-    ? sanitizeJsonValue(payload.package.current_public_summary)
+    ? removePublicSummaryPricing(sanitizeJsonValue(payload.package.current_public_summary))
     : {};
   const packageData = {
     id: optionalString(payload.package.id, 200),
     package_reference: packageReference,
     customer_name: customerName,
     customer_email: optionalString(payload.package.customer_email, 500),
+    customer_phone: optionalString(
+      payload.package.customer_phone ?? payload.package.customer_mobile ?? payload.package.customer_contact_number,
+      120
+    ),
+    customer_whatsapp: optionalString(
+      payload.package.customer_whatsapp ?? payload.package.customer_whats_app ?? payload.package.whatsapp_number,
+      120
+    ),
     package_type: optionalString(payload.package.package_type, 200),
     destination: optionalString(payload.package.destination, 500),
     departure_date: optionalString(payload.package.departure_date, 100),

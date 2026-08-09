@@ -13,6 +13,8 @@ import {
   UserIcon,
   XIcon
 } from '../Icons';
+import PackageSupportContacts from '../portal/PackageSupportContacts';
+import PersonalTravelChecklist from '../portal/PersonalTravelChecklist';
 
 function formatExpiryDate(customer) {
   const dateToUse = customer.accessExpiresAt || customer.createdAt;
@@ -274,6 +276,11 @@ export default function LegacyClientDashboard({ customer, onLogout, onCustomerUp
         ) : (
           <div className="py-12 text-center"><p className="text-gray-500">No documents have been uploaded for you yet.</p></div>
         )}
+
+        <div className="mt-8 space-y-4">
+          <PackageSupportContacts customerEmail={localEmail} customerPhone={localSim} />
+          <PersonalTravelChecklist reference={customer.referenceNumber} />
+        </div>
 
         <footer className="mt-8 border-t border-gray-200 pt-4 dark:border-gray-700">
           <div className="flex items-center justify-center rounded-lg bg-slate-50 p-3 text-sm text-gray-500 dark:bg-slate-700">

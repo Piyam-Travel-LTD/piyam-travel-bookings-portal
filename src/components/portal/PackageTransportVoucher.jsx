@@ -51,7 +51,7 @@ export default function PackageTransportVoucher({ voucher }) {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 id="transport-voucher-heading" className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-            Transport Voucher
+            Transport Summary
           </h2>
           <div className="text-sm text-gray-500">
             {safeVoucher.voucherNumber && <span>Voucher {safeVoucher.voucherNumber}</span>}

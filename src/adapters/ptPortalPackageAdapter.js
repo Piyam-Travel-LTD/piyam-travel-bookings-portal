@@ -48,7 +48,8 @@ function normalizePublicSummary(summary) {
 
   const blockedFragments = [
     'internal', 'supplier', 'cost', 'commission', 'margin', 'profit', 'employee',
-    'audit', 'risk', 'shareaccess', 'storage', 'objectkey', 'token'
+    'audit', 'risk', 'shareaccess', 'storage', 'objectkey', 'token', 'price',
+    'amount', 'balance', 'deposit', 'currency', 'fare', 'quote', 'subtotal', 'grandtotal'
   ];
 
   // The object is already designated public by PT-Portal. Keep only scalar values
@@ -57,6 +58,7 @@ function normalizePublicSummary(summary) {
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(key)) return safeSummary;
     if (['__proto__', 'prototype', 'constructor'].includes(key)) return safeSummary;
     const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (['total', 'paid', 'outstanding'].includes(normalizedKey)) return safeSummary;
     if (blockedFragments.some((fragment) => normalizedKey.includes(fragment))) return safeSummary;
     if (!['string', 'number', 'boolean'].includes(typeof value)) return safeSummary;
     safeSummary[key] = typeof value === 'string' ? cleanText(value, '', 2000) : value;
@@ -126,6 +128,16 @@ export function normalizePtPortalPackage(apiPayload) {
     checklist: normalizeChecklist(rawChecklist, packageData.passport_status || packageData.passportStatus),
     keyInformation: {
       customerEmail: cleanText(packageData.customer_email, '', 254),
+      customerPhone: cleanText(
+        packageData.customer_phone || packageData.customer_mobile || packageData.customer_contact_number,
+        '',
+        120
+      ),
+      customerWhatsApp: cleanText(
+        packageData.customer_whatsapp || packageData.customer_whats_app || packageData.whatsapp_number,
+        '',
+        120
+      ),
       customerName: cleanText(packageData.customer_name, 'Customer', 300)
     },
     signedUrlExpiresIn: Number.isFinite(expiresIn) && expiresIn > 0 ? Math.floor(expiresIn) : null,
