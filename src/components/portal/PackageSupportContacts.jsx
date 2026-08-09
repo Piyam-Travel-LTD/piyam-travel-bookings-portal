@@ -16,7 +16,7 @@ export default function PackageSupportContacts({ customerEmail, customerPhone, c
 
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-2" aria-label="Customer and emergency contact details">
-      <div className={`rounded-lg border p-4 ${contactDetailsComplete ? 'border-slate-200 bg-slate-50 dark:border-slate-600 dark:bg-slate-700' : 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30'}`}>
+      <div className={`rounded-lg border p-4 ${contactDetailsComplete ? 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800' : 'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/60'}`}>
         <h3 className="font-bold text-gray-800 dark:text-gray-100">Your contact details</h3>
         <dl className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-200">
           <div><dt className="inline font-semibold">Email: </dt><dd className="inline break-all">{email || 'Not provided'}</dd></div>
@@ -43,7 +43,7 @@ export default function PackageSupportContacts({ customerEmail, customerPhone, c
         )}
       </div>
 
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/60">
         <h3 className="font-bold text-red-950 dark:text-red-100">Piyam Travel emergency contact</h3>
         <p className="mt-1 text-xs text-red-900 dark:text-red-200">Available 24/7 while you are travelling.</p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -55,11 +55,11 @@ export default function PackageSupportContacts({ customerEmail, customerPhone, c
             target="_blank"
             rel="noopener noreferrer"
             referrerPolicy="no-referrer"
-            className="inline-flex min-h-10 items-center rounded-lg border border-red-800 px-3 py-2 text-sm font-semibold text-red-900 hover:bg-white dark:text-red-100"
+            className="inline-flex min-h-10 items-center rounded-lg border border-red-800 px-3 py-2 text-sm font-semibold text-red-900 hover:bg-white dark:border-red-600 dark:text-red-100 dark:hover:bg-red-900"
           >
             WhatsApp office
           </a>
-          <a href={`mailto:${OFFICE_SUPPORT.email}`} className="inline-flex min-h-10 items-center rounded-lg border border-red-800 px-3 py-2 text-sm font-semibold text-red-900 hover:bg-white dark:text-red-100">
+          <a href={`mailto:${OFFICE_SUPPORT.email}`} className="inline-flex min-h-10 items-center rounded-lg border border-red-800 px-3 py-2 text-sm font-semibold text-red-900 hover:bg-white dark:border-red-600 dark:text-red-100 dark:hover:bg-red-900">
             {OFFICE_SUPPORT.email}
           </a>
         </div>

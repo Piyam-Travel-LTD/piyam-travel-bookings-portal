@@ -512,10 +512,11 @@ Recommended mobile-first sections:
 ```text
 Overview
 Documents
-Invoice (only when released)
+My Checklist
+Invoice
 ```
 
-Show the released transport summary inside Overview rather than as a separate tab. Do not render an empty Invoice tab.
+Show the released transport summary inside Overview rather than as a separate tab. Keep the personal browser-session checklist in its own tab. The Invoice tab is always visible during the beta but renders only an explicit **Coming soon** state; it must not display invoice or pricing data until the invoice experience is approved for release.
 
 On mobile, use a compact sticky tab row or segmented navigation. Avoid a wide desktop grid compressed into the phone viewport.
 
@@ -562,7 +563,9 @@ When a released transport document is available, include a clear **View / Print 
 
 ### 10.6 Released Invoice
 
-Show only the immutable customer snapshot returned as `releasedInvoice`:
+Current beta behaviour: show a **Coming soon** page and an office contact route for customers who need an invoice copy. Do not render any `releasedInvoice` values yet.
+
+When the invoice experience is approved, show only the immutable customer snapshot returned as `releasedInvoice`:
 
 - invoice number and version
 - customer-visible line descriptions
@@ -600,6 +603,7 @@ Phase 1 recommendation:
 - show the office's 24/7 emergency phone, WhatsApp, and email details on the customer overview
 - direct changes to the agent through WhatsApp
 - do not add customer-write APIs until the exact audit and validation rules are agreed
+- show a site-wide beta/work-in-progress notice, a consistent light/dark theme, and the customer-facing Rathobixz Inc. development attribution
 
 Future customer-write endpoints should live in PT-Portal and record audit events. They should not update Supabase directly from the bookings portal browser.
 
@@ -827,11 +831,9 @@ bookings.piyamtravel.com by reference/surname and by QR token.
 
 ### Invoice
 
-- draft invoice is hidden
-- released invoice appears
-- amended but unreleased invoice does not replace the released snapshot
-- only customer-visible lines appear
-- booked cost, margin, and commission are absent
+- Invoice tab is always present and clearly marked **Coming soon**
+- no draft, released, amended, line-item, price, balance, cost, margin, or commission data appears
+- the office contact action does not include customer or package data in its URL
 
 ### Mobile
 
@@ -839,7 +841,7 @@ bookings.piyamtravel.com by reference/surname and by QR token.
 - tabs remain usable with one hand
 - document actions do not overlap filenames
 - preview can be closed without browser back navigation
-- price/invoice tables collapse into readable rows
+- Overview, Documents, My Checklist, and Invoice remain keyboard and touch accessible
 - no IMS install prompt appears
 
 ### Security

@@ -3,34 +3,40 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-gray-100 text-gray-800 transition-colors duration-300;
+    @apply min-h-screen bg-slate-50 text-slate-900 antialiased transition-colors duration-300;
   }
   .dark body {
-    @apply bg-gray-900 text-gray-200;
+    @apply bg-slate-950 text-slate-100;
   }
   
   /* Applying dark mode styles to specific component backgrounds */
   .dark .bg-white {
-    @apply bg-gray-800;
+    @apply bg-slate-900;
   }
   .dark .bg-gray-50 {
-    @apply bg-gray-700;
+    @apply bg-slate-800;
   }
   .dark .text-gray-800 {
       @apply text-gray-200;
   }
   .dark .text-gray-600 {
-      @apply text-gray-400;
+      @apply text-slate-300;
   }
     .dark .text-gray-500 {
-      @apply text-gray-400;
+      @apply text-slate-400;
   }
     .dark .border-gray-200 {
-      @apply border-gray-600;
+      @apply border-slate-700;
   }
     .dark .border-gray-300 {
-      @apply border-gray-500;
+      @apply border-slate-600;
   }
   .dark .bg-gray-200 {
       @apply bg-gray-600;
@@ -49,5 +55,10 @@
   }
    .dark .text-yellow-800 {
       @apply text-yellow-300;
+  }
+  .dark input,
+  .dark textarea,
+  .dark select {
+    @apply text-slate-100 placeholder:text-slate-500;
   }
 }
