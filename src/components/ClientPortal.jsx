@@ -1,207 +1,489 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { piyamTravelLogoBase64, fileCategories } from '../data';
-import { UserIcon, PhoneIcon, MailIcon, SimCardIcon, GlobeIcon, FileIcon, DownloadIcon, InfoIcon, PreviewIcon, XIcon } from './Icons';
+import React, {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { normalizePtPortalPackage } from '../adapters/ptPortalPackageAdapter';
+import {
+  loadPackageData,
+  logoutPackageSession
+} from '../services/packagePortalApi';
+import { getPackageErrorMessage } from '../services/packageErrorResolver';
+import PackageDocumentPreview from './portal/PackageDocumentPreview';
+import PackageDocuments from './portal/PackageDocuments';
+import PackageErrorState from './portal/PackageErrorState';
+import PackageHeader from './portal/PackageHeader';
+import PackageInvoice from './portal/PackageInvoice';
+import PackageLogin from './portal/PackageLogin';
+import PackageOverview from './portal/PackageOverview';
+import PackageTransportVoucher from './portal/PackageTransportVoucher';
 
-const PiyamTravelLogo = () => ( <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo"/> );
+const LegacyClientDashboard = lazy(() => import('./legacy/LegacyClientDashboard'));
+const SIGNED_LINK_REFRESH_LEEWAY_MS = 60_000;
 
-const ClientLoginPage = ({ onLogin, setIsLoading }) => {
-    const [refNumber, setRefNumber] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [error, setError] = useState('');
+function LoadingPanel({ message = 'Loading your package…' }) {
+  return (
+    <div className="rounded-2xl bg-white p-8 text-center shadow-xl dark:bg-gray-800" role="status" aria-live="polite">
+      <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-red-800" aria-hidden="true" />
+      <p className="text-gray-600 dark:text-gray-300">{message}</p>
+    </div>
+  );
+}
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setIsLoading(true);
+function signedLinksNeedRefresh(customer, now = Date.now()) {
+  const lifetimeSeconds = Number(customer?.signedUrlExpiresIn);
+  const loadedAt = Date.parse(customer?.loadedAt || '');
+  if (!Number.isFinite(lifetimeSeconds) || lifetimeSeconds <= 0 || !Number.isFinite(loadedAt)) return false;
+  const lifetimeMs = lifetimeSeconds * 1000;
+  const leeway = Math.min(SIGNED_LINK_REFRESH_LEEWAY_MS, Math.max(1_000, lifetimeMs * 0.1));
+  return now >= loadedAt + lifetimeMs - leeway;
+}
 
-        try {
-            const response = await fetch('/api/lookup-customer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ referenceNumber: refNumber, lastName }),
-            });
-            const data = await response.json();
-            if (!response.ok) { throw new Error(data.error || 'Customer not found.'); }
-            onLogin(data);
-        } catch (err) {
-            console.error("Login error:", err);
-            setError(err.message || 'An error occurred. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+function findDocument(customer, documentId) {
+  return customer?.documents?.find((document) => document.id === documentId) || null;
+}
 
-    return (
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border-t-4 border-red-800">
-            <div className="p-8">
-                <div className="flex justify-center mb-6"><PiyamTravelLogo /></div>
-                <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-200 mb-2">Client Document Portal</h1>
-                <p className="text-gray-500 text-center mb-8">Access your travel documents securely.</p>
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor="refNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference Number</label>
-                        <div className="mt-1 flex items-center">
-                            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400">PT-</span>
-                            <input type="text" id="refNumber" value={refNumber} onChange={(e) => setRefNumber(e.target.value.toUpperCase())} placeholder="6P7GC2" className="flex-1 block w-full rounded-none rounded-r-lg p-2 border border-gray-300 focus:border-red-500 focus:ring-red-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600" required />
-                        </div>
-                    </div>
-                    <div>
-                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
-                        <div className="mt-1 relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><UserIcon className="h-5 w-5 text-gray-400" /></div>
-                            <input type="text" id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Your last name" className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-red-800 focus:border-red-800 dark:bg-gray-900 dark:border-gray-600" required />
-                        </div>
-                    </div>
-                    {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-                    <div>
-                         <button type="submit" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-800 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">Access Documents</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
+function triggerDownload(documentToDownload) {
+  if (!documentToDownload?.signed_url) throw new Error('This secure download is unavailable.');
 
-const ClientDashboard = ({ customer, onLogout, onCustomerUpdate }) => {
-    const [previewFile, setPreviewFile] = useState(null);
-    const [isChecklistVisible, setIsChecklistVisible] = useState(true);
-    const [localSim, setLocalSim] = useState(customer.keyInformation?.customerSim || '');
-    const [localEmail, setLocalEmail] = useState(customer.keyInformation?.customerEmail || '');
+  const anchor = document.createElement('a');
+  anchor.href = documentToDownload.signed_url;
+  anchor.download = documentToDownload.file_name || documentToDownload.title || 'document';
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  anchor.referrerPolicy = 'no-referrer';
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
 
-    useEffect(() => {
-        setLocalSim(customer.keyInformation?.customerSim || '');
-        setLocalEmail(customer.keyInformation?.customerEmail || '');
-    }, [customer]);
+function openSecureTab(url, existingWindow = null) {
+  if (!url) throw new Error('This secure preview is unavailable.');
 
-    const handleSaveContactInfo = async () => {
-        const newKeyInfo = {
-            ...customer.keyInformation,
-            customerSim: localSim,
-            customerEmail: localEmail,
-            isEmailLocked: true
-        };
-        const customerDocRef = doc(db, "customers", customer.id);
-        try {
-            await updateDoc(customerDocRef, { keyInformation: newKeyInfo, lastUpdatedAt: serverTimestamp() });
-            onCustomerUpdate({ ...customer, keyInformation: newKeyInfo, lastUpdatedAt: new Date().toISOString() });
-            alert("Your contact information has been saved.");
-        } catch (error) {
-            console.error("Error updating contact info:", error);
-            alert("Could not save your information. Please try again.");
-        }
-    };
+  if (existingWindow && !existingWindow.closed) {
+    existingWindow.opener = null;
+    existingWindow.location.replace(url);
+    return;
+  }
 
-    const visibleCategories = fileCategories.filter(category =>
-        customer.documents && customer.documents.some(doc => doc.category === category.name)
-    );
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  anchor.referrerPolicy = 'no-referrer';
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
 
-    const getExpiryDate = () => {
-        const dateToUse = customer.accessExpiresAt || customer.createdAt;
-        if (!dateToUse) return 'N/A';
-        const expiryBaseDate = new Date(dateToUse);
-        if (!customer.accessExpiresAt) {
-            expiryBaseDate.setMonth(expiryBaseDate.getMonth() + 10);
-        }
-        return expiryBaseDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    };
+function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, onRefreshPackage }) {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [previewDocument, setPreviewDocument] = useState(null);
+  const [actionMessage, setActionMessage] = useState('');
 
-    const getLastUpdatedDate = () => {
-        if (!customer.lastUpdatedAt) return 'Not available';
-        return new Date(customer.lastUpdatedAt).toLocaleString('en-GB');
+  const tabs = useMemo(() => {
+    const availableTabs = [
+      { id: 'overview', label: 'Overview' },
+      { id: 'documents', label: 'Documents' }
+    ];
+    if (customer.transportVoucher) availableTabs.push({ id: 'transport', label: 'Transport' });
+    if (customer.releasedInvoice) availableTabs.push({ id: 'invoice', label: 'Invoice' });
+    return availableTabs;
+  }, [customer.releasedInvoice, customer.transportVoucher]);
+
+  useEffect(() => {
+    if (!tabs.some((tab) => tab.id === activeTab)) setActiveTab('overview');
+  }, [activeTab, tabs]);
+
+  const handleTabKeyDown = useCallback((event, currentIndex) => {
+    let nextIndex = currentIndex;
+
+    if (event.key === 'ArrowRight') {
+      nextIndex = (currentIndex + 1) % tabs.length;
+    } else if (event.key === 'ArrowLeft') {
+      nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = tabs.length - 1;
+    } else {
+      return;
     }
 
-    const keyInfo = customer.keyInformation || {};
-    const checklist = customer.checklist || [];
-    const isEmailEditable = !keyInfo.isEmailLocked || !keyInfo.customerEmail;
+    event.preventDefault();
+    const nextTab = tabs[nextIndex];
+    setActiveTab(nextTab.id);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`package-tab-${nextTab.id}`)?.focus();
+    });
+  }, [tabs]);
 
-    const handleChecklistItemToggle = async (itemId) => {
-        const updatedChecklist = checklist.map(item =>
-            item.id === itemId ? { ...item, completed: !item.completed } : item
-        );
-        const customerDocRef = doc(db, "customers", customer.id);
-        try {
-            await updateDoc(customerDocRef, { checklist: updatedChecklist });
-            onCustomerUpdate({ ...customer, checklist: updatedChecklist });
-        } catch (error) {
-            console.error("Error updating checklist:", error);
-        }
-    };
+  const refreshDocument = useCallback(async (originalDocument, { force = false } = {}) => {
+    const refreshedPackage = await onRefreshPackage({ force });
+    const refreshedDocument = findDocument(refreshedPackage, originalDocument.id);
+    if (!refreshedDocument) {
+      throw new Error('This document is no longer available. Refresh the package to see current releases.');
+    }
+    return refreshedDocument;
+  }, [onRefreshPackage]);
 
-    return (
-        <>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 w-full">
-                <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4 border-b border-gray-200 dark:border-gray-700 pb-6">
-                    <div>
-                        <p className="text-gray-500 font-mono text-sm">Reference: {customer.referenceNumber}</p>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mt-1">Welcome, {customer.firstName} {customer.lastName}</h1>
-                        <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg font-semibold">{customer.packageType} to {customer.destination}</p>
-                    </div>
-                    <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
-                        {customer.status === 'Completed' && <span className="text-base font-bold text-green-800 bg-green-200 px-4 py-2 rounded-full dark:bg-green-900 dark:text-green-300">Package Completed</span>}
-                        <button onClick={onLogout} className="w-full md:w-auto bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Log Out</button>
-                    </div>
-                </div>
+  const handleDownload = useCallback(async (documentToDownload) => {
+    setActionMessage('');
+    try {
+      if (!signedLinksNeedRefresh(customer)) {
+        triggerDownload(documentToDownload);
+        return;
+      }
 
-                {/* --- Key Information Card (Maroon Theme) --- */}
-                <div className="mb-8 p-4 bg-red-800 text-white rounded-lg">
-                    <h3 className="text-lg font-bold mb-4">Key Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                        <div className="flex items-start gap-3"><UserIcon className="h-5 w-5 mt-1 opacity-75"/><div><p className="font-semibold">Your Agent</p><p className="opacity-90">{keyInfo.agentName}</p><p className="opacity-90">{keyInfo.agentContact}</p><p className="text-xs italic mt-1 opacity-75">{keyInfo.whatsAppNotes}</p></div></div>
-                        <div className="flex items-start gap-3"><GlobeIcon className="h-5 w-5 mt-1 opacity-75"/><div><p className="font-semibold">Ground Transport Manager</p><p className="opacity-90">{keyInfo.groundTransportManager}</p></div></div>
-                        <div className="flex items-start gap-3"><SimCardIcon className="h-5 w-5 mt-1 opacity-75"/><div><label className="font-semibold">Your Local SIM Number</label><input type="text" value={localSim} onChange={(e) => setLocalSim(e.target.value)} placeholder="Enter your local number" className="w-full mt-1 p-1 border rounded bg-white bg-opacity-20 border-white border-opacity-30" /></div></div>
-                        <div className="flex items-start gap-3"><MailIcon className="h-5 w-5 mt-1 opacity-75"/><div><label className="font-semibold">Your Email Address</label><input type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)} placeholder="Enter your email" className={`w-full mt-1 p-1 border rounded bg-white bg-opacity-20 border-white border-opacity-30 ${!isEmailEditable ? 'bg-black bg-opacity-20 cursor-not-allowed' : ''}`} disabled={!isEmailEditable} /></div></div>
-                    </div>
-                    <button onClick={handleSaveContactInfo} className="mt-4 bg-white text-red-800 font-semibold py-1 px-3 rounded-lg hover:bg-gray-200">Save My Info</button>
-                </div>
+      const refreshedDocument = await refreshDocument(documentToDownload, { force: true });
+      triggerDownload(refreshedDocument);
+    } catch (error) {
+      // The package shell displays the refresh error without leaving an unhandled event promise.
+      setActionMessage(error?.message || 'This document is not currently available.');
+    }
+  }, [customer, refreshDocument]);
 
-                {checklist.length > 0 && (<div className="mb-8"><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">Your Pre-Travel Checklist</h2><button onClick={() => setIsChecklistVisible(!isChecklistVisible)} className="text-sm font-semibold text-red-800 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300">{isChecklistVisible ? 'Hide' : 'Show'}</button></div>{isChecklistVisible && (<div className="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg border border-slate-200 dark:border-slate-600 space-y-3">{checklist.map(item => (<label key={item.id} className="flex items-center cursor-pointer p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"><input type="checkbox" checked={item.completed} onChange={() => handleChecklistItemToggle(item.id)} className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500" /><span className={`ml-3 text-gray-700 dark:text-gray-300 ${item.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''}`}>{item.text}</span></label>))}</div>)}</div>)}
-                
-                <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">Your Documents</h2>
-                {visibleCategories.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {visibleCategories.map(category => (
-                            <div key={category.name} className="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
-                                <h3 className="font-bold text-lg mb-4">{category.icon} {category.name}</h3>
-                                <div className="space-y-3">
-                                    {customer.documents.filter(doc => doc.category === category.name).map(file => (
-                                        <div key={file.id} className="bg-white dark:bg-gray-800 p-3 rounded-lg border dark:border-gray-700">
-                                            <div className="flex items-center truncate mb-3">
-                                                <FileIcon className="h-5 w-5 mr-3 flex-shrink-0 text-gray-500" />
-                                                <span className="truncate font-medium text-gray-800 dark:text-gray-200">{file.name}</span>
-                                            </div>
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button onClick={() => setPreviewFile(file)} className="flex items-center bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg hover:bg-gray-300 transition-colors text-sm dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"><PreviewIcon className="h-4 w-4 mr-2" />Preview</button>
-                                                <a href={file.url} download className="flex items-center bg-red-800 text-white font-semibold py-1 px-3 rounded-lg hover:bg-red-700 transition-colors text-sm"><DownloadIcon className="h-4 w-4 mr-2" />Download</a>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (<div className="text-center py-12"><p className="text-gray-500">No documents have been uploaded for you yet.</p></div>)}
+  const handleViewHtml = useCallback(async (documentToView) => {
+    setActionMessage('');
+    if (!signedLinksNeedRefresh(customer)) {
+      openSecureTab(documentToView.preview_url);
+      return;
+    }
 
-                <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-center text-sm text-gray-500 bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
-                        <InfoIcon className="h-5 w-5 mr-3 flex-shrink-0" />
-                        For your security, access to this portal will expire on {getExpiryDate()}. Please download any documents you wish to keep.
-                    </div>
-                    <p className="text-center text-xs text-gray-400 mt-4">Last Updated: {getLastUpdatedDate()}</p>
-                </div>
-            </div>
+    const placeholder = window.open('about:blank', '_blank');
+    if (placeholder) {
+      placeholder.opener = null;
+      try {
+        placeholder.document.title = 'Loading secure voucher…';
+        const meta = placeholder.document.createElement('meta');
+        meta.name = 'referrer';
+        meta.content = 'no-referrer';
+        placeholder.document.head.appendChild(meta);
+      } catch (_error) {
+        // The placeholder remains safe after its opener is cleared.
+      }
+    }
 
-            {previewFile && (<div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"><div className="bg-white rounded-lg shadow-2xl w-full h-full max-w-4xl max-h-[90vh] flex flex-col"><div className="flex justify-between items-center p-4 border-b flex-shrink-0"><h3 className="font-bold text-lg truncate">{previewFile.name}</h3><button onClick={() => setPreviewFile(null)} className="text-gray-400 hover:text-gray-800"><XIcon className="h-6 w-6" /></button></div><div className="flex-grow p-2">{previewFile.url.toLowerCase().endsWith('.jpg') ? (<img src={previewFile.url} alt="Document Preview" className="w-full h-full object-contain" />) : (<iframe src={previewFile.url} title="Document Preview" className="w-full h-full border-0"></iframe>)}</div></div></div>)}
-        </>
-    );
-};
+    try {
+      const refreshedDocument = await refreshDocument(documentToView, { force: true });
+      openSecureTab(refreshedDocument.preview_url, placeholder);
+    } catch (error) {
+      placeholder?.close();
+      setActionMessage(error?.message || 'This voucher is not currently available.');
+    }
+  }, [customer, refreshDocument]);
+
+  const handlePreviewRefresh = useCallback(async (documentToRefresh) => {
+    const refreshedDocument = await refreshDocument(documentToRefresh, { force: true });
+    setPreviewDocument(refreshedDocument);
+    return refreshedDocument;
+  }, [refreshDocument]);
+
+  return (
+    <>
+      <div className="w-full rounded-2xl bg-white p-4 shadow-xl dark:bg-gray-800 sm:p-6 md:p-8">
+        <PackageHeader customer={customer} onLogout={onLogout} />
+
+        {(isRefreshing || refreshMessage || actionMessage) && (
+          <div
+            className={`mb-4 rounded-lg border p-3 text-sm ${refreshMessage || actionMessage ? 'border-amber-300 bg-amber-50 text-amber-950' : 'border-blue-200 bg-blue-50 text-blue-900'}`}
+            role={refreshMessage || actionMessage ? 'alert' : 'status'}
+            aria-live="polite"
+          >
+            {isRefreshing ? 'Refreshing your secure document links…' : refreshMessage || actionMessage}
+          </div>
+        )}
+
+        <div className="sticky top-0 z-10 -mx-4 mb-6 border-y border-gray-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-800/95 sm:mx-0 sm:rounded-lg sm:border sm:px-2">
+          <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Package sections" aria-orientation="horizontal">
+            {tabs.map((tab, index) => {
+              const selected = tab.id === activeTab;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  id={`package-tab-${tab.id}`}
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={`package-panel-${tab.id}`}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(event) => handleTabKeyDown(event, index)}
+                  className={`min-h-10 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 ${selected ? 'bg-red-800 text-white' : 'border border-red-800 text-red-800 hover:bg-red-50 dark:text-red-200 dark:hover:bg-gray-700'}`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div
+          id={`package-panel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`package-tab-${activeTab}`}
+          tabIndex={0}
+          className="focus:outline-none"
+        >
+          {activeTab === 'overview' && <PackageOverview customer={customer} />}
+          {activeTab === 'documents' && (
+            <>
+              <div className="mb-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => onRefreshPackage({ force: true }).catch(() => {})}
+                  disabled={isRefreshing}
+                  className="min-h-10 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  {isRefreshing ? 'Refreshing…' : 'Refresh secure links'}
+                </button>
+              </div>
+              <PackageDocuments
+                documents={customer.documents}
+                onPreview={setPreviewDocument}
+                onDownload={handleDownload}
+                onViewHtml={handleViewHtml}
+              />
+            </>
+          )}
+          {activeTab === 'transport' && <PackageTransportVoucher voucher={customer.transportVoucher} />}
+          {activeTab === 'invoice' && <PackageInvoice invoice={customer.releasedInvoice} />}
+        </div>
+      </div>
+
+      <PackageDocumentPreview
+        document={previewDocument}
+        onClose={() => setPreviewDocument(null)}
+        onRefreshDocument={handlePreviewRefresh}
+      />
+    </>
+  );
+}
 
 export default function ClientPortal() {
-    const [loggedInCustomer, setLoggedInCustomer] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const handleLogin = (customer) => { setLoggedInCustomer(customer); };
-    const handleLogout = () => { setLoggedInCustomer(null); };
-    const handleCustomerUpdate = (updatedData) => { setLoggedInCustomer(updatedData); };
-    return (<div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex items-center justify-center p-4"><div className="w-full max-w-5xl">{isLoading ? (<div className="text-center"><p className="text-gray-500">Loading...</p></div>) : loggedInCustomer ? (<ClientDashboard customer={loggedInCustomer} onLogout={handleLogout} onCustomerUpdate={handleCustomerUpdate} />) : (<ClientLoginPage onLogin={handleLogin} setIsLoading={setIsLoading} />)}</div></div>);
+  const { token } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [portalPackage, setPortalPackage] = useState(null);
+  const [isRouteLoading, setIsRouteLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState('');
+  const [portalError, setPortalError] = useState(null);
+  const credentialRef = useRef(null);
+  const packageRef = useRef(null);
+  const refreshPromiseRef = useRef(null);
+  const skipNextDocumentsLoadRef = useRef(false);
+  const customerStateVersionRef = useRef(0);
+
+  const commitPackage = useCallback((nextPackage) => {
+    packageRef.current = nextPackage;
+    setPortalPackage(nextPackage);
+  }, []);
+
+  useEffect(() => {
+    const directToken = typeof token === 'string' && token ? token : null;
+    const isSessionRoute = location.pathname === '/documents';
+    if (!directToken && !isSessionRoute) return undefined;
+
+    if (isSessionRoute && skipNextDocumentsLoadRef.current && packageRef.current) {
+      skipNextDocumentsLoadRef.current = false;
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+    setIsRouteLoading(true);
+    setPortalError(null);
+    setRefreshMessage('');
+
+    (async () => {
+      try {
+        const payload = await loadPackageData(directToken, { signal: controller.signal });
+        if (cancelled) return;
+
+        const normalized = normalizePtPortalPackage(payload);
+        const sessionEstablished = payload.sessionEstablished === true || !directToken;
+        credentialRef.current = sessionEstablished ? null : directToken;
+        commitPackage(normalized);
+
+        if (directToken && sessionEstablished) {
+          skipNextDocumentsLoadRef.current = true;
+          navigate('/documents', { replace: true });
+        }
+      } catch (error) {
+        if (cancelled || error?.name === 'AbortError') return;
+        credentialRef.current = null;
+        commitPackage(null);
+        setPortalError({
+          title: Number(error?.status) === 410 ? 'Access expired' : 'Package unavailable',
+          message: getPackageErrorMessage(error, 'token')
+        });
+      } finally {
+        if (!cancelled) setIsRouteLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [commitPackage, location.pathname, navigate, token]);
+
+  const refreshPackage = useCallback(async ({ force = false } = {}) => {
+    const currentPackage = packageRef.current;
+    if (!currentPackage || currentPackage.source !== 'pt_portal') return currentPackage;
+    if (!force && !signedLinksNeedRefresh(currentPackage)) return currentPackage;
+    if (refreshPromiseRef.current) return refreshPromiseRef.current;
+
+    const refreshRequest = (async () => {
+      const stateVersion = customerStateVersionRef.current;
+      setIsRefreshing(true);
+      setRefreshMessage('');
+      try {
+        const payload = await loadPackageData(credentialRef.current);
+        if (stateVersion !== customerStateVersionRef.current) return packageRef.current;
+        const normalized = normalizePtPortalPackage(payload);
+        if (payload.sessionEstablished === true) {
+          credentialRef.current = null;
+        }
+        commitPackage(normalized);
+        return normalized;
+      } catch (error) {
+        if (stateVersion !== customerStateVersionRef.current) return packageRef.current;
+        const status = Number(error?.status);
+        if ([400, 404, 410].includes(status)) {
+          credentialRef.current = null;
+          commitPackage(null);
+          setPortalError({
+            title: status === 410 ? 'Access expired' : 'Package unavailable',
+            message: getPackageErrorMessage(error, 'token')
+          });
+        } else {
+          setRefreshMessage(getPackageErrorMessage(error, 'token'));
+        }
+        throw error;
+      } finally {
+        setIsRefreshing(false);
+      }
+    })();
+
+    refreshPromiseRef.current = refreshRequest;
+    try {
+      return await refreshRequest;
+    } finally {
+      if (refreshPromiseRef.current === refreshRequest) refreshPromiseRef.current = null;
+    }
+  }, [commitPackage]);
+
+  useEffect(() => {
+    if (portalPackage?.source !== 'pt_portal') return undefined;
+    const lifetimeSeconds = Number(portalPackage.signedUrlExpiresIn);
+    const loadedAt = Date.parse(portalPackage.loadedAt || '');
+    if (!Number.isFinite(lifetimeSeconds) || lifetimeSeconds <= 0 || !Number.isFinite(loadedAt)) return undefined;
+
+    const lifetimeMs = lifetimeSeconds * 1000;
+    const leeway = Math.min(SIGNED_LINK_REFRESH_LEEWAY_MS, Math.max(1_000, lifetimeMs * 0.1));
+    const refreshAt = loadedAt + lifetimeMs - leeway;
+    const delay = Math.min(Math.max(refreshAt - Date.now(), 1_000), 2_147_000_000);
+    const timer = window.setTimeout(() => {
+      refreshPackage({ force: true }).catch(() => {});
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [portalPackage, refreshPackage]);
+
+  const handleAuthenticated = useCallback(async ({
+    package: authenticatedPackage,
+    credential,
+    sessionEstablished
+  }) => {
+    credentialRef.current = credential || null;
+    setPortalError(null);
+    setRefreshMessage('');
+    commitPackage(authenticatedPackage);
+
+    if (authenticatedPackage.source === 'pt_portal' && sessionEstablished) {
+      skipNextDocumentsLoadRef.current = true;
+      navigate('/documents', { replace: true });
+    }
+  }, [commitPackage, navigate]);
+
+  const clearCustomerState = useCallback(() => {
+    customerStateVersionRef.current += 1;
+    credentialRef.current = null;
+    refreshPromiseRef.current = null;
+    setPortalError(null);
+    setRefreshMessage('');
+    commitPackage(null);
+  }, [commitPackage]);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutPackageSession();
+    } catch (_error) {
+      // Local package state is still cleared; the next protected request revalidates upstream access.
+    } finally {
+      clearCustomerState();
+      navigate('/', { replace: true });
+    }
+  }, [clearCustomerState, navigate]);
+
+  const returnToLogin = useCallback(() => {
+    logoutPackageSession().catch(() => {});
+    clearCustomerState();
+    navigate('/', { replace: true });
+  }, [clearCustomerState, navigate]);
+
+  const updateLegacyCustomer = useCallback((updatedCustomer) => {
+    commitPackage(updatedCustomer);
+  }, [commitPackage]);
+
+  let content;
+  if (isRouteLoading) {
+    content = <LoadingPanel />;
+  } else if (portalError) {
+    content = (
+      <PackageErrorState
+        title={portalError.title}
+        message={portalError.message}
+        actionLabel="Return to package login"
+        onAction={returnToLogin}
+      />
+    );
+  } else if (portalPackage?.source === 'pt_portal') {
+    content = (
+      <PtPortalDashboard
+        customer={portalPackage}
+        isRefreshing={isRefreshing}
+        refreshMessage={refreshMessage}
+        onLogout={handleLogout}
+        onRefreshPackage={refreshPackage}
+      />
+    );
+  } else if (portalPackage?.source === 'legacy_firebase') {
+    content = (
+      <Suspense fallback={<LoadingPanel message="Loading legacy package…" />}>
+        <LegacyClientDashboard
+          customer={portalPackage}
+          onLogout={handleLogout}
+          onCustomerUpdate={updateLegacyCustomer}
+        />
+      </Suspense>
+    );
+  } else {
+    content = <PackageLogin onAuthenticated={handleAuthenticated} />;
+  }
+
+  const isDashboard = Boolean(portalPackage);
+  return (
+    <main className={`min-h-screen bg-slate-50 p-3 dark:bg-slate-900 sm:p-4 ${isDashboard ? 'flex items-start justify-center py-5 sm:py-8' : 'flex items-center justify-center'}`}>
+      <div className="w-full max-w-5xl">{content}</div>
+    </main>
+  );
 }

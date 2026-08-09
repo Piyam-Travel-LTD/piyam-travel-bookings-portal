@@ -357,7 +357,7 @@ export default function AgentDashboard({ onLogout }) {
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div><h1 className="text-3xl font-bold text-gray-800">Customer Folders</h1><p className="text-gray-500 mt-1">Manage all your client travel packages.</p></div>
                 <div className="flex gap-4">
-                    <button onClick={() => setIsCreateModalOpen(true)} className="flex items-center justify-center bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><PlusIcon />Create New Folder</button>
+                    <button onClick={() => setIsCreateModalOpen(true)} className="flex items-center justify-center bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors"><PlusIcon />Create Legacy Folder</button>
                     <button onClick={onLogout} className="flex items-center justify-center bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-500 transition-colors"><LogOutIcon />Sign Out</button>
                 </div>
             </div>
@@ -421,6 +421,9 @@ export default function AgentDashboard({ onLogout }) {
     return (
         <div className="bg-gray-100 min-h-screen p-4 md:p-8">
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.jpg" multiple />
+            <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-950" role="note">
+                Legacy package folders only. Create and manage new packages in PT-Portal.
+            </div>
             {selectedCustomer ? renderCustomerFolder() : renderDashboard()}
             <CreateFolderModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} handleCreateCustomer={handleCreateCustomer} newCustomerFirstName={newCustomerFirstName} setNewCustomerFirstName={setNewCustomerFirstName} newCustomerLastName={newCustomerLastName} setNewCustomerLastName={setNewCustomerLastName} newPackageType={newPackageType} setNewPackageType={setNewPackageType} newDestination={newDestination} setNewDestination={setNewDestination} newCustomerRef={newCustomerRef} />
             <VoucherModal isOpen={isVoucherModalOpen} onClose={() => setIsVoucherModalOpen(false)} customer={selectedCustomer} handleCopy={handleCopy} copySuccess={copySuccess} />

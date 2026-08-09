@@ -1,62 +1,38 @@
-import admin from 'firebase-admin';
+import {
+  HttpError,
+  parseJsonBody,
+  rejectMethod,
+  sendError,
+  setPrivateJsonHeaders
+} from '../server/http.js';
+import { resolvePackageAccess } from '../server/package-access-resolver.js';
 
-// This securely initializes the Firebase Admin SDK using the credentials
-// you stored in Vercel's Environment Variables.
-try {
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      })
-    });
-  }
-} catch (error) {
-  console.error('Firebase admin initialization error', error.stack);
-}
+export function createLegacyLookupHandler({ resolver = resolvePackageAccess } = {}) {
+  return async function handler(req, res) {
+    setPrivateJsonHeaders(res);
+    if (req.method !== 'POST') return rejectMethod(res, 'POST');
 
-const db = admin.firestore();
+    try {
+      const body = parseJsonBody(req);
+      const reference = body.referenceNumber ?? body.reference ?? body.referenceNumberInput;
+      const lastName = body.lastName ?? body.surname;
+      const result = await resolver(reference, lastName);
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+      if (result.source === 'pt_portal') {
+        throw new HttpError(
+          410,
+          'This package is managed in the current package portal. Refresh the page and sign in again.',
+          { code: 'LEGACY_ENDPOINT_RETIRED' }
+        );
+      }
 
-  const { referenceNumber, lastName } = req.body;
-
-  if (!referenceNumber || !lastName) {
-    return res.status(400).json({ error: 'Reference number and last name are required.' });
-  }
-
-  try {
-    const customersRef = db.collection('customers');
-    const q = customersRef
-      .where('referenceNumber', '==', `PT-${referenceNumber.trim().toUpperCase()}`)
-      .where('lastName_lowercase', '==', lastName.trim().toLowerCase());
-      
-    const querySnapshot = await q.get();
-
-    if (querySnapshot.empty) {
-      return res.status(404).json({ error: 'Invalid reference number or last name. Please try again.' });
+      // Preserve the legacy endpoint's raw customer response shape for old clients,
+      // but only after PT-Portal has returned a genuine 404.
+      return res.status(200).json(result.customer);
+    } catch (error) {
+      return sendError(res, error);
     }
-
-    const doc = querySnapshot.docs[0];
-    const customerData = doc.data();
-
-    // This is the crucial fix for the date translation
-    const finalData = {
-      ...customerData,
-      id: doc.id,
-      createdAt: customerData.createdAt ? customerData.createdAt.toDate().toISOString() : null,
-      lastUpdatedAt: customerData.lastUpdatedAt ? customerData.lastUpdatedAt.toDate().toISOString() : null,
-      accessExpiresAt: customerData.accessExpiresAt ? customerData.accessExpiresAt.toDate().toISOString() : null,
-    };
-    
-    return res.status(200).json(finalData);
-
-  } catch (error) {
-    console.error('API Lookup Error:', error);
-    return res.status(500).json({ error: 'An internal server error occurred.' });
-  }
+  };
 }
+
+export default createLegacyLookupHandler();
