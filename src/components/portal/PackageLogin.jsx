@@ -150,11 +150,11 @@ export default function PackageLogin({ onAuthenticated, onLogin }) {
   const describedBy = [errorId, retryId].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className="overflow-hidden rounded-2xl border-t-4 border-red-800 bg-white shadow-xl dark:bg-gray-800">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 border-t-4 border-t-red-800 bg-white shadow-xl dark:border-slate-800 dark:border-t-red-700 dark:bg-slate-900 dark:shadow-black/30">
       <div className="p-5 sm:p-8">
         <div className="mb-6 flex justify-center"><PiyamTravelLogo /></div>
         <h1 className="mb-2 text-center text-2xl font-bold text-gray-800 dark:text-gray-200">Client Document Portal</h1>
-        <p className="mb-8 text-center text-gray-500">Access your travel documents securely.</p>
+        <p className="mb-8 text-center text-gray-500 dark:text-slate-400">Access your travel documents securely.</p>
 
         <form className="space-y-6" onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
           <div>
@@ -206,7 +206,7 @@ export default function PackageLogin({ onAuthenticated, onLogin }) {
           </div>
 
           <div className="min-h-5 text-center" aria-live="assertive">
-            {error && <p id={errorId} className="text-sm text-red-600" role="alert">{error}</p>}
+            {error && <p id={errorId} className="text-sm text-red-600 dark:text-red-300" role="alert">{error}</p>}
             {retrySeconds > 0 && (
               <p id={retryId} className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                 You can try again in {retrySeconds} second{retrySeconds === 1 ? '' : 's'}.

@@ -56,10 +56,13 @@ Record pass/fail and the sanitized evidence location for each row.
 | Preview/download | Test PDF, image, HTML voucher, and download-only file behavior. Confirm the supplied filename and new-tab protections. |
 | Signed URL expiry | Leave the portal open until a signed URL expires; the portal refreshes package data and retries only once. |
 | Transport | Only released, customer-safe transport fields appear; no supplier allocation or net cost is visible. View/Print works for the released voucher. |
-| Overview support | Transport appears as an Overview summary, price-like public information is absent, the personal checklist stays browser-session-only, and office emergency contacts are usable. |
+| Overview support | Transport appears as an Overview summary, price-like public information is absent, and office emergency contacts are usable. |
+| Personal checklist | The checklist has its own tab, stays browser-session-only, and remains isolated when the customer switches packages. |
 | Contact reminder | A package missing email or mobile/WhatsApp details shows a clear office contact prompt without writing directly to PT-Portal or Firebase. |
-| Invoice | Only the released immutable snapshot appears. Hidden lines, booked cost, margin, commission, draft changes, and internal notes are absent. |
-| Empty states | A package with no released documents shows the approved calm empty state and no empty Transport or Invoice tab. |
+| Invoice | The always-visible Invoice tab shows only the approved Coming soon state. No invoice, line-item, price, balance, cost, margin, commission, draft, or internal-note data appears. |
+| Beta shell | The work-in-progress banner and Rathobixz Inc. footer appear on login, package, and controlled-error states; Support and Privacy email links work. |
+| Dark mode | Login, all four tabs, alerts, cards, forms, checklist, preview, banner, and footer remain readable with visible focus states in dark mode. |
+| Empty states | A package with no released documents shows the approved calm empty state and no empty Transport section. |
 | Logout | Logout clears customer state and any session cookie, replaces a token-bearing URL, and refresh does not reopen the package without valid access. |
 | Error semantics | Validate <code>400</code>, <code>404</code>, <code>410</code>, <code>429</code>, timeout, malformed upstream response, and <code>5xx</code>. Every API response is JSON and outages are not described as invalid details. |
 | Cache/referrer | Package-data responses are <code>private, no-store</code>. Token pages and previews do not send token-bearing referrers. |

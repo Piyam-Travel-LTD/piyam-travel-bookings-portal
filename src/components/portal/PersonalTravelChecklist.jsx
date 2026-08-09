@@ -96,7 +96,7 @@ export default function PersonalTravelChecklist({ reference }) {
   const resetChecklist = () => setState((current) => ({ ...current, completed: {}, customItems: [] }));
 
   return (
-    <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30" aria-labelledby="personal-checklist-heading">
+    <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/60 sm:p-5" aria-labelledby="personal-checklist-heading">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 id="personal-checklist-heading" className="font-bold text-gray-800 dark:text-gray-100">My personal checklist</h3>
@@ -111,7 +111,7 @@ export default function PersonalTravelChecklist({ reference }) {
 
       <ul className="mt-4 space-y-2">
         {allItems.map((item) => (
-          <li key={item.id} className="flex items-start gap-2 rounded-md bg-white p-3 dark:bg-gray-800">
+          <li key={item.id} className="flex items-start gap-2 rounded-md border border-transparent bg-white p-3 dark:border-emerald-900 dark:bg-slate-900">
             <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
@@ -127,7 +127,7 @@ export default function PersonalTravelChecklist({ reference }) {
               <button
                 type="button"
                 onClick={() => removeItem(item.id)}
-                className="shrink-0 rounded px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-red-300 dark:hover:bg-gray-700"
+                className="shrink-0 rounded px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-red-300 dark:hover:bg-slate-800"
                 aria-label={`Remove ${item.label}`}
               >
                 Remove
@@ -146,7 +146,7 @@ export default function PersonalTravelChecklist({ reference }) {
           onChange={(event) => setNewItem(event.target.value)}
           maxLength={120}
           placeholder="Add your own reminder"
-          className="min-h-10 min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900"
+          className="min-h-10 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-600 focus:ring-emerald-600 dark:border-slate-600 dark:bg-slate-950"
         />
         <button
           type="submit"
@@ -158,7 +158,7 @@ export default function PersonalTravelChecklist({ reference }) {
       </form>
 
       {(completedCount > 0 || state.customItems.length > 0) && (
-        <button type="button" onClick={resetChecklist} className="mt-3 text-xs font-semibold text-gray-600 underline hover:text-gray-900 dark:text-gray-300">
+        <button type="button" onClick={resetChecklist} className="mt-3 text-xs font-semibold text-gray-600 underline hover:text-gray-900 dark:text-slate-300 dark:hover:text-white">
           Reset my checklist
         </button>
       )}

@@ -69,11 +69,11 @@ export default function PackageDocuments({ documents, onPreview, onDownload, onV
       <h2 id="package-documents-heading" className="mb-4 text-xl font-semibold text-gray-700 dark:text-gray-300">
         Your Documents
       </h2>
-      {actionError && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">{actionError}</p>}
+      {actionError && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-200" role="alert">{actionError}</p>}
       {visibleCategories.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {visibleCategories.map(categoryKey => (
-            <section key={categoryKey} className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-700 sm:p-4">
+            <section key={categoryKey} className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800 sm:p-4">
               <h3 className="mb-4 font-bold text-gray-800 dark:text-gray-100">
                 <span aria-hidden="true">{CATEGORY_ICONS[categoryKey] || '📄'} </span>
                 {CATEGORY_LABELS[categoryKey] || 'Other'}
@@ -87,7 +87,7 @@ export default function PackageDocuments({ documents, onPreview, onDownload, onV
                   const htmlActionKey = `html:${document.id}`;
 
                   return (
-                    <article key={document.id} className="min-w-0 rounded-lg border bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
+                    <article key={document.id} className="min-w-0 rounded-lg border bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                       <div className="mb-2 flex min-w-0 items-start gap-3">
                         <FileIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-500" />
                         <div className="min-w-0">

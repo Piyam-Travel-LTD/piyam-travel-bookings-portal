@@ -11,7 +11,7 @@ export default function PackageHeader({ customer, onLogout }) {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4 border-b border-gray-200 dark:border-gray-700 pb-6">
       <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
-        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-red-100 bg-red-50">
+        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-red-100 bg-red-50 dark:border-red-900 dark:bg-white">
           <PiyamTravelLogo />
         </div>
         <div className="min-w-0">

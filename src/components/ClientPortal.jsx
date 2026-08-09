@@ -21,6 +21,9 @@ import PackageHeader from './portal/PackageHeader';
 import PackageInvoice from './portal/PackageInvoice';
 import PackageLogin from './portal/PackageLogin';
 import PackageOverview from './portal/PackageOverview';
+import PersonalTravelChecklist from './portal/PersonalTravelChecklist';
+import PortalFooter from './portal/PortalFooter';
+import PortalWorkInProgressBanner from './portal/PortalWorkInProgressBanner';
 
 const LegacyClientDashboard = lazy(() => import('./legacy/LegacyClientDashboard'));
 const SIGNED_LINK_REFRESH_LEEWAY_MS = 60_000;
@@ -87,14 +90,14 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
   const [previewDocument, setPreviewDocument] = useState(null);
   const [actionMessage, setActionMessage] = useState('');
 
-  const tabs = useMemo(() => {
-    const availableTabs = [
+  const tabs = useMemo(() => (
+    [
       { id: 'overview', label: 'Overview' },
-      { id: 'documents', label: 'Documents' }
-    ];
-    if (customer.releasedInvoice) availableTabs.push({ id: 'invoice', label: 'Invoice' });
-    return availableTabs;
-  }, [customer.releasedInvoice]);
+      { id: 'documents', label: 'Documents' },
+      { id: 'checklist', label: 'My Checklist' },
+      { id: 'invoice', label: 'Invoice' }
+    ]
+  ), []);
 
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTab)) setActiveTab('overview');
@@ -186,12 +189,12 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
 
   return (
     <>
-      <div className="w-full rounded-2xl bg-white p-4 shadow-xl dark:bg-gray-800 sm:p-6 md:p-8">
+      <div className="w-full rounded-2xl border border-transparent bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/30 sm:p-6 md:p-8">
         <PackageHeader customer={customer} onLogout={onLogout} />
 
         {(isRefreshing || refreshMessage || actionMessage) && (
           <div
-            className={`mb-4 rounded-lg border p-3 text-sm ${refreshMessage || actionMessage ? 'border-amber-300 bg-amber-50 text-amber-950' : 'border-blue-200 bg-blue-50 text-blue-900'}`}
+            className={`mb-4 rounded-lg border p-3 text-sm ${refreshMessage || actionMessage ? 'border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100' : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100'}`}
             role={refreshMessage || actionMessage ? 'alert' : 'status'}
             aria-live="polite"
           >
@@ -199,7 +202,7 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
           </div>
         )}
 
-        <div className="sticky top-0 z-10 -mx-4 mb-6 border-y border-gray-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-gray-700 dark:bg-gray-800/95 sm:mx-0 sm:rounded-lg sm:border sm:px-2">
+        <div className="sticky top-0 z-10 -mx-4 mb-6 border-y border-gray-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:mx-0 sm:rounded-lg sm:border sm:px-2">
           <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Package sections" aria-orientation="horizontal">
             {tabs.map((tab, index) => {
               const selected = tab.id === activeTab;
@@ -214,7 +217,7 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
                   tabIndex={selected ? 0 : -1}
                   onClick={() => setActiveTab(tab.id)}
                   onKeyDown={(event) => handleTabKeyDown(event, index)}
-                  className={`min-h-10 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 ${selected ? 'bg-red-800 text-white' : 'border border-red-800 text-red-800 hover:bg-red-50 dark:text-red-200 dark:hover:bg-gray-700'}`}
+                  className={`min-h-10 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-offset-slate-900 ${selected ? 'bg-red-800 text-white shadow-sm dark:bg-red-700' : 'border border-red-800 text-red-800 hover:bg-red-50 dark:border-red-500 dark:text-red-200 dark:hover:bg-slate-800'}`}
                 >
                   {tab.label}
                 </button>
@@ -251,7 +254,8 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
               />
             </>
           )}
-          {activeTab === 'invoice' && <PackageInvoice invoice={customer.releasedInvoice} />}
+          {activeTab === 'checklist' && <PersonalTravelChecklist reference={customer.reference} />}
+          {activeTab === 'invoice' && <PackageInvoice />}
         </div>
       </div>
 
@@ -479,8 +483,12 @@ export default function ClientPortal() {
 
   const isDashboard = Boolean(portalPackage);
   return (
-    <main className={`min-h-screen bg-slate-50 p-3 dark:bg-slate-900 sm:p-4 ${isDashboard ? 'flex items-start justify-center py-5 sm:py-8' : 'flex items-center justify-center'}`}>
-      <div className="w-full max-w-5xl">{content}</div>
-    </main>
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
+      <PortalWorkInProgressBanner />
+      <main className={`flex flex-1 p-3 sm:p-4 ${isDashboard ? 'items-start justify-center py-5 sm:py-8' : 'items-center justify-center py-8'}`}>
+        <div className="w-full max-w-5xl">{content}</div>
+      </main>
+      <PortalFooter />
+    </div>
   );
 }
