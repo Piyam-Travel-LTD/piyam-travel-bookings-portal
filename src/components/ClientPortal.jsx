@@ -21,7 +21,6 @@ import PackageHeader from './portal/PackageHeader';
 import PackageInvoice from './portal/PackageInvoice';
 import PackageLogin from './portal/PackageLogin';
 import PackageOverview from './portal/PackageOverview';
-import PackageTransportVoucher from './portal/PackageTransportVoucher';
 
 const LegacyClientDashboard = lazy(() => import('./legacy/LegacyClientDashboard'));
 const SIGNED_LINK_REFRESH_LEEWAY_MS = 60_000;
@@ -93,10 +92,9 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
       { id: 'overview', label: 'Overview' },
       { id: 'documents', label: 'Documents' }
     ];
-    if (customer.transportVoucher) availableTabs.push({ id: 'transport', label: 'Transport' });
     if (customer.releasedInvoice) availableTabs.push({ id: 'invoice', label: 'Invoice' });
     return availableTabs;
-  }, [customer.releasedInvoice, customer.transportVoucher]);
+  }, [customer.releasedInvoice]);
 
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTab)) setActiveTab('overview');
@@ -232,7 +230,7 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
           tabIndex={0}
           className="focus:outline-none"
         >
-          {activeTab === 'overview' && <PackageOverview customer={customer} />}
+          {activeTab === 'overview' && <PackageOverview customer={customer} onOpenDocuments={() => setActiveTab('documents')} />}
           {activeTab === 'documents' && (
             <>
               <div className="mb-4 flex justify-end">
@@ -253,7 +251,6 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
               />
             </>
           )}
-          {activeTab === 'transport' && <PackageTransportVoucher voucher={customer.transportVoucher} />}
           {activeTab === 'invoice' && <PackageInvoice invoice={customer.releasedInvoice} />}
         </div>
       </div>

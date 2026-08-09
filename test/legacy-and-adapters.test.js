@@ -75,6 +75,15 @@ test('PT adapter accepts omitted release flags and rejects explicit hidden, draf
       package_reference: 'PT-H29GPX',
       customer_name: 'Ada Smith',
       customer_email: 'ada@example.test',
+      customer_phone: '+44 7000 000000',
+      customer_whatsapp: '+44 7111 111111',
+      current_public_summary: {
+        welcome: 'Your package is ready',
+        package_price: 1_500,
+        balance_due: 500,
+        total: 1_500,
+        currency: 'GBP'
+      },
       destination: 'Istanbul'
     },
     documents: [
@@ -87,6 +96,9 @@ test('PT adapter accepts omitted release flags and rejects explicit hidden, draf
 
   assert.equal(normalized.source, 'pt_portal');
   assert.equal(normalized.reference, 'PT-H29GPX');
+  assert.deepEqual(normalized.publicSummary, { welcome: 'Your package is ready' });
+  assert.equal(normalized.keyInformation.customerPhone, '+44 7000 000000');
+  assert.equal(normalized.keyInformation.customerWhatsApp, '+44 7111 111111');
   assert.equal(normalized.documents.length, 1);
   assert.deepEqual(normalized.documents[0], {
     id: 'visible',

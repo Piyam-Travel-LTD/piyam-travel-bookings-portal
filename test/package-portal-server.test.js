@@ -123,11 +123,16 @@ test('package payload sanitizer accepts released docs with omitted redundant fla
       package_reference: 'h29gpx',
       customer_name: 'Ada Traveller',
       customer_email: 'ada@example.test',
+      customer_phone: '+44 7000 000000',
+      customer_whatsapp: '+44 7111 111111',
       commission: 500,
       current_public_summary: {
         welcome: 'Your trip is ready',
+        package_price: 1_200,
+        balance_due: 400,
+        total: 1_200,
         supplier_cost: 900,
-        nested: { destinationTip: 'Pack light', profitMargin: 40 }
+        nested: { destinationTip: 'Pack light', roomPrice: 600, profitMargin: 40 }
       }
     },
     documents: [
@@ -180,6 +185,8 @@ test('package payload sanitizer accepts released docs with omitted redundant fla
     welcome: 'Your trip is ready',
     nested: { destinationTip: 'Pack light' }
   });
+  assert.equal(sanitized.package.customer_phone, '+44 7000 000000');
+  assert.equal(sanitized.package.customer_whatsapp, '+44 7111 111111');
   assert.equal(sanitized.documents.length, 1);
   assert.equal(sanitized.documents[0].id, 'flight-1');
   assert.equal(sanitized.documents[0].status, 'released');
