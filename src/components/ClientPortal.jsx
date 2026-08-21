@@ -11,7 +11,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { normalizePtPortalPackage } from '../adapters/ptPortalPackageAdapter';
 import {
   loadPackageData,
-  logoutPackageSession
+  logoutPackageSession,
+  requestPackageAccessExtension
 } from '../services/packagePortalApi';
 import { getPackageErrorMessage } from '../services/packageErrorResolver';
 import PackageDocumentPreview from './portal/PackageDocumentPreview';
@@ -85,7 +86,7 @@ function openSecureTab(url, existingWindow = null) {
   anchor.remove();
 }
 
-function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, onRefreshPackage }) {
+function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, onRefreshPackage, onRequestAccessExtension }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [previewDocument, setPreviewDocument] = useState(null);
   const [actionMessage, setActionMessage] = useState('');
@@ -233,7 +234,13 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
           tabIndex={0}
           className="focus:outline-none"
         >
-          {activeTab === 'overview' && <PackageOverview customer={customer} onOpenDocuments={() => setActiveTab('documents')} />}
+          {activeTab === 'overview' && (
+            <PackageOverview
+              customer={customer}
+              onOpenDocuments={() => setActiveTab('documents')}
+              onRequestAccessExtension={onRequestAccessExtension}
+            />
+          )}
           {activeTab === 'documents' && (
             <>
               <div className="mb-4 flex justify-end">
@@ -268,7 +275,7 @@ function PtPortalDashboard({ customer, isRefreshing, refreshMessage, onLogout, o
   );
 }
 
-export default function ClientPortal() {
+export default function ClientPortal({ theme = 'light', onToggleTheme }) {
   const { token } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -322,9 +329,11 @@ export default function ClientPortal() {
         if (cancelled || error?.name === 'AbortError') return;
         credentialRef.current = null;
         commitPackage(null);
+        const status = Number(error?.status);
         setPortalError({
-          title: Number(error?.status) === 410 ? 'Access expired' : 'Package unavailable',
-          message: getPackageErrorMessage(error, 'token')
+          title: status === 410 ? 'Access expired' : 'Package unavailable',
+          message: getPackageErrorMessage(error, 'token'),
+          canRequestExtension: status === 410 && Boolean(directToken)
         });
       } finally {
         if (!cancelled) setIsRouteLoading(false);
@@ -364,7 +373,8 @@ export default function ClientPortal() {
           commitPackage(null);
           setPortalError({
             title: status === 410 ? 'Access expired' : 'Package unavailable',
-            message: getPackageErrorMessage(error, 'token')
+            message: getPackageErrorMessage(error, 'token'),
+            canRequestExtension: status === 410
           });
         } else {
           setRefreshMessage(getPackageErrorMessage(error, 'token'));
@@ -445,6 +455,10 @@ export default function ClientPortal() {
     commitPackage(updatedCustomer);
   }, [commitPackage]);
 
+  const requestAccessExtension = useCallback(() => requestPackageAccessExtension({
+    token: credentialRef.current || token || null
+  }), [token]);
+
   let content;
   if (isRouteLoading) {
     content = <LoadingPanel />;
@@ -455,6 +469,7 @@ export default function ClientPortal() {
         message={portalError.message}
         actionLabel="Return to package login"
         onAction={returnToLogin}
+        onRequestAccessExtension={portalError.canRequestExtension ? requestAccessExtension : undefined}
       />
     );
   } else if (portalPackage?.source === 'pt_portal') {
@@ -465,6 +480,7 @@ export default function ClientPortal() {
         refreshMessage={refreshMessage}
         onLogout={handleLogout}
         onRefreshPackage={refreshPackage}
+        onRequestAccessExtension={requestAccessExtension}
       />
     );
   } else if (portalPackage?.source === 'legacy_firebase') {
@@ -478,7 +494,13 @@ export default function ClientPortal() {
       </Suspense>
     );
   } else {
-    content = <PackageLogin onAuthenticated={handleAuthenticated} />;
+    content = (
+      <PackageLogin
+        onAuthenticated={handleAuthenticated}
+        theme={theme}
+        onToggleTheme={onToggleTheme}
+      />
+    );
   }
 
   const isDashboard = Boolean(portalPackage);

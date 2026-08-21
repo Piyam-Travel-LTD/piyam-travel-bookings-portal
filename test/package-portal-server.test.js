@@ -231,6 +231,75 @@ test('PT access client accepts a valid token and sends only normalized request d
   assert.ok(captured.init.signal instanceof AbortSignal);
 });
 
+test('extension client keeps tokens in Authorization and validates the accepted response', async () => {
+  let captured;
+  const client = createPackagePortalClient({
+    env: PORTAL_ENV,
+    fetchImpl: async (url, init) => {
+      captured = { url, init };
+      return jsonResponse({ requested: true, alreadyRequested: false }, { status: 202 });
+    }
+  });
+
+  assert.deepEqual(await client.requestAccessExtension({ rawToken: 'opaque-token-123' }), {
+    requested: true,
+    alreadyRequested: false
+  });
+  assert.equal(captured.url.href, 'https://portal.example.test/internal/root/api/package-portal/extension-request');
+  assert.equal(captured.init.headers.Authorization, 'Bearer opaque-token-123');
+  assert.equal(captured.url.href.includes('opaque-token-123'), false);
+  assert.deepEqual(JSON.parse(captured.init.body), {});
+
+  const referenceClient = createPackagePortalClient({
+    env: PORTAL_ENV,
+    fetchImpl: async (_url, init) => {
+      assert.equal(init.headers.Authorization, undefined);
+      assert.deepEqual(JSON.parse(init.body), {
+        reference: 'PT-H29GPX',
+        lastName: 'Smith'
+      });
+      return jsonResponse({ requested: true, alreadyRequested: true }, { status: 202 });
+    }
+  });
+  assert.deepEqual(await referenceClient.requestAccessExtension({
+    rawReference: 'h29gpx',
+    rawLastName: ' Smith '
+  }), { requested: true, alreadyRequested: true });
+});
+
+test('extension client maps invalid, throttled, and malformed IMS responses safely', async () => {
+  for (const [status, expectedStatus, expectedCode] of [
+    [404, 404, 'EXTENSION_CREDENTIALS_INVALID'],
+    [429, 429, 'EXTENSION_THROTTLED'],
+    [500, 503, 'UPSTREAM_EXTENSION_ERROR']
+  ]) {
+    const client = createPackagePortalClient({
+      env: PORTAL_ENV,
+      fetchImpl: async () => jsonResponse(
+        { error: 'private upstream detail' },
+        { status, headers: status === 429 ? { 'Retry-After': '60' } : {} }
+      )
+    });
+    await assert.rejects(
+      client.requestAccessExtension({ rawToken: 'opaque-token-123' }),
+      error => assertHttpError(error, {
+        status: expectedStatus,
+        code: expectedCode,
+        ...(status === 429 ? { retryAfter: '60' } : {})
+      })
+    );
+  }
+
+  const malformed = createPackagePortalClient({
+    env: PORTAL_ENV,
+    fetchImpl: async () => jsonResponse({}, { status: 202 })
+  });
+  await assert.rejects(
+    malformed.requestAccessExtension({ rawToken: 'opaque-token-123' }),
+    error => assertHttpError(error, { status: 503, code: 'INVALID_EXTENSION_RESPONSE' })
+  );
+});
+
 test('only a valid JSON upstream 404 is represented as a fallback candidate', async () => {
   const valid404Client = createPackagePortalClient({
     env: PORTAL_ENV,

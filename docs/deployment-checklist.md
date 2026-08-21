@@ -59,6 +59,7 @@ Record pass/fail and the sanitized evidence location for each row.
 | Overview support | Transport appears as an Overview summary, price-like public information is absent, and office emergency contacts are usable. |
 | Personal checklist | The checklist has its own tab, stays browser-session-only, and remains isolated when the customer switches packages. |
 | Contact reminder | A package missing email or mobile/WhatsApp details shows a clear office contact prompt without writing directly to PT-Portal or Firebase. |
+| Extension request | A logged-in PT customer and a customer with verified expired access can submit one request. IMS creates one open staff task and audit event; repeated submissions are deduplicated and no expiry changes automatically. |
 | Invoice | The always-visible Invoice tab shows only the approved Coming soon state. No invoice, line-item, price, balance, cost, margin, commission, draft, or internal-note data appears. |
 | Beta shell | The work-in-progress banner and Rathobixz Inc. footer appear on login, package, and controlled-error states; Support and Privacy email links work. |
 | Dark mode | Login, all four tabs, alerts, cards, forms, checklist, preview, banner, and footer remain readable with visible focus states in dark mode. |
@@ -68,6 +69,7 @@ Record pass/fail and the sanitized evidence location for each row.
 | Cache/referrer | Package-data responses are <code>private, no-store</code>. Token pages and previews do not send token-bearing referrers. |
 | Mobile | At 320 px width there is no horizontal overflow; tabs and document actions remain usable; previews close without browser Back. |
 | Customer routes | No agent-only or IMS installation prompt appears on customer routes. |
+| Agent route | `/agent` redirects to the customer login and the AgentPortal bundle is not loaded by the public route manifest. |
 
 ## 4. Rate-limit and client-IP verification
 

@@ -1,6 +1,7 @@
 import React from 'react';
+import PackageAccessExtensionRequest from './PackageAccessExtensionRequest';
 
-export default function PackageErrorState({ title = 'Package unavailable', message = 'Package documents are not currently available. Contact your agent.', actionLabel, onAction }) {
+export default function PackageErrorState({ title = 'Package unavailable', message = 'Package documents are not currently available. Contact your agent.', actionLabel, onAction, onRequestAccessExtension }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full" role="alert">
       <div className="max-w-xl mx-auto text-center">
@@ -14,6 +15,7 @@ export default function PackageErrorState({ title = 'Package unavailable', messa
             {actionLabel}
           </button>
         )}
+        <PackageAccessExtensionRequest className="mt-6 text-left" onRequest={onRequestAccessExtension} />
       </div>
     </div>
   );

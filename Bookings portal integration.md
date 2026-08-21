@@ -607,7 +607,11 @@ Phase 1 recommendation:
 
 Future customer-write endpoints should live in PT-Portal and record audit events. They should not update Supabase directly from the bookings portal browser.
 
+The first approved customer-originated write is an access-extension request. The bookings portal sends the existing package credential, or the verified reference/surname pair after an expired login, to its same-origin `/api/package-extension-request` proxy. The proxy calls PT-Portal's `/api/package-portal/extension-request`. PT-Portal rate-limits and verifies the request, creates one deduplicated open `portal_access_extension` task for staff, and records a package audit event. It does **not** change the expiry automatically; staff retain the final decision and use the authenticated IMS access controls to extend it.
+
 Legacy Firebase customers may retain their existing editable controls until migration.
+
+The legacy `/agent` customer-portal route is disabled. Staff must create and manage PT packages in IMS.
 
 ---
 
