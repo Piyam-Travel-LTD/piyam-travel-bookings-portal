@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { createPackageAccessHandler } from '../api/package-access.js';
 import { createPackageDataHandler, resolveRequestToken } from '../api/package-data.js';
+import { createPackageExtensionRequestHandler } from '../api/package-extension-request.js';
 import { createPackageSessionHandler } from '../api/package-session.js';
 import { HttpError } from '../server/http.js';
 import { createPackageAccessResolver } from '../server/package-access-resolver.js';
@@ -274,10 +275,52 @@ test('session endpoint validates the token upstream before setting a cookie and 
   assert.equal(loadCalls, 1);
 });
 
+test('extension handler uses bearer, cookie, or reference credentials without echoing secrets', async () => {
+  const calls = [];
+  const handler = createPackageExtensionRequestHandler({
+    env: SESSION_ENV,
+    portalClientFactory: () => ({
+      requestAccessExtension: async credential => {
+        calls.push(credential);
+        return { requested: true, alreadyRequested: calls.length > 1 };
+      }
+    })
+  });
+
+  const bearer = createMockResponse();
+  await handler({
+    method: 'POST',
+    headers: { authorization: `Bearer ${TOKEN}` },
+    body: {}
+  }, bearer);
+  assert.equal(bearer.statusCode, 202);
+  assert.deepEqual(calls[0], { rawToken: TOKEN });
+  assert.equal(JSON.stringify(bearer.body).includes(TOKEN), false);
+
+  const encrypted = encryptPackageSession('cookie-token-123', { env: SESSION_ENV });
+  const cookie = createMockResponse();
+  await handler({
+    method: 'POST',
+    headers: { cookie: `${PACKAGE_SESSION_COOKIE}=${encrypted}` },
+    body: {}
+  }, cookie);
+  assert.deepEqual(calls[1], { rawToken: 'cookie-token-123' });
+
+  const expiredLogin = createMockResponse();
+  await handler({
+    method: 'POST',
+    headers: {},
+    body: { reference: 'h29gpx', lastName: ' Smith ' }
+  }, expiredLogin);
+  assert.deepEqual(calls[2], { rawReference: 'h29gpx', rawLastName: ' Smith ' });
+  assert.equal(expiredLogin.getHeader('Cache-Control').includes('no-store'), true);
+});
+
 test('handlers reject unsupported methods with an Allow header', async () => {
   for (const [handler, req, allowed] of [
     [createPackageAccessHandler({ resolver: async () => null }), { method: 'GET' }, 'POST'],
     [createPackageDataHandler({ portalClientFactory: () => ({}) }), { method: 'POST' }, 'GET'],
+    [createPackageExtensionRequestHandler({ portalClientFactory: () => ({}) }), { method: 'GET' }, 'POST'],
     [createPackageSessionHandler({ portalClientFactory: () => ({}) }), { method: 'PATCH' }, 'POST, DELETE']
   ]) {
     const res = createMockResponse();

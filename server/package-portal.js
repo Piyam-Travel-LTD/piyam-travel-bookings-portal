@@ -8,6 +8,7 @@ const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 30_000;
 const ACCESS_RESPONSE_LIMIT_BYTES = 32 * 1024;
 const PACKAGE_RESPONSE_LIMIT_BYTES = 2 * 1024 * 1024;
+const EXTENSION_RESPONSE_LIMIT_BYTES = 16 * 1024;
 
 const ACCESS_MESSAGES = Object.freeze({
   invalid: 'Package details do not match. Check the lead passenger surname and reference.',
@@ -22,6 +23,12 @@ const DATA_MESSAGES = Object.freeze({
   expired: 'Your document access has expired. Contact your agent to renew access.',
   throttled: 'Too many attempts. Please wait before trying again.',
   service: 'The package service is temporarily unavailable. Please try again shortly.'
+});
+
+const EXTENSION_MESSAGES = Object.freeze({
+  invalid: 'We could not verify this package. Check the details and try again.',
+  throttled: 'Too many extension requests. Please wait before trying again.',
+  unavailable: 'We could not send the extension request right now. Please try again shortly.'
 });
 
 export function normalizePackageReference(rawValue) {
@@ -519,7 +526,54 @@ export function createPackagePortalClient({ fetchImpl = globalThis.fetch, env = 
     throw new HttpError(503, DATA_MESSAGES.service, { code: 'UPSTREAM_DATA_ERROR' });
   };
 
-  return { accessPackage, loadPackage };
+  const requestAccessExtension = async ({ rawToken, rawReference, rawLastName } = {}) => {
+    const token = rawToken == null || rawToken === '' ? null : requirePackageToken(rawToken);
+    const reference = token ? null : normalizePackageReference(rawReference);
+    const lastName = token ? null : normalizeLastName(rawLastName);
+    if (!token && (!reference || !lastName)) {
+      throw new HttpError(400, EXTENSION_MESSAGES.invalid, { code: 'INVALID_EXTENSION_INPUT' });
+    }
+
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const result = await requestJson('api/package-portal/extension-request', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(token ? {} : { reference, lastName })
+    }, EXTENSION_RESPONSE_LIMIT_BYTES);
+
+    if (result.status === 202 && result.ok) {
+      if (!result.jsonValid || result.payload?.requested !== true) {
+        throw new HttpError(503, EXTENSION_MESSAGES.unavailable, {
+          code: 'INVALID_EXTENSION_RESPONSE'
+        });
+      }
+      return {
+        requested: true,
+        alreadyRequested: result.payload.alreadyRequested === true
+      };
+    }
+    if ([400, 404].includes(result.status)) {
+      throw new HttpError(result.status, EXTENSION_MESSAGES.invalid, {
+        code: 'EXTENSION_CREDENTIALS_INVALID'
+      });
+    }
+    if (result.status === 429) {
+      throw new HttpError(429, EXTENSION_MESSAGES.throttled, {
+        code: 'EXTENSION_THROTTLED',
+        retryAfter: result.retryAfter
+      });
+    }
+    throw new HttpError(503, EXTENSION_MESSAGES.unavailable, {
+      code: 'UPSTREAM_EXTENSION_ERROR'
+    });
+  };
+
+  return { accessPackage, loadPackage, requestAccessExtension };
 }
 
-export { ACCESS_MESSAGES, DATA_MESSAGES };
+export { ACCESS_MESSAGES, DATA_MESSAGES, EXTENSION_MESSAGES };

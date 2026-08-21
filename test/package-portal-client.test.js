@@ -7,6 +7,7 @@ import {
   loadPackageData,
   logoutPackageSession,
   PackagePortalApiError,
+  requestPackageAccessExtension,
   resolvePackageAccess
 } from '../src/services/packagePortalApi.js';
 import { jsonResponse, withMockedFetch } from './helpers.js';
@@ -40,6 +41,29 @@ test('client sends package tokens only in Authorization, never in the URL', asyn
   assert.equal(captured.init.headers.Authorization, `Bearer ${TOKEN}`);
   assert.equal(captured.init.credentials, 'same-origin');
   assert.equal(result.package.package_reference, 'PT-H29GPX');
+});
+
+test('client sends extension requests through same-origin credentials', async () => {
+  const calls = [];
+  await withMockedFetch(async (url, init) => {
+    calls.push({ url, init });
+    return jsonResponse({ requested: true, alreadyRequested: false }, { status: 202 });
+  }, async () => {
+    await requestPackageAccessExtension({ token: TOKEN });
+    await requestPackageAccessExtension({ reference: 'H29GPX', lastName: 'Smith' });
+  });
+
+  assert.equal(calls[0].url, '/api/package-extension-request');
+  assert.equal(calls[0].init.headers.Authorization, `Bearer ${TOKEN}`);
+  assert.equal(calls[0].url.includes(TOKEN), false);
+  assert.deepEqual(JSON.parse(calls[0].init.body), {});
+  assert.equal(calls[0].init.credentials, 'same-origin');
+
+  assert.equal(calls[1].init.headers.Authorization, undefined);
+  assert.deepEqual(JSON.parse(calls[1].init.body), {
+    reference: 'H29GPX',
+    lastName: 'Smith'
+  });
 });
 
 test('client surfaces typed API errors with numeric Retry-After and server code', async () => {

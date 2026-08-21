@@ -1,7 +1,5 @@
 import React from 'react';
-import { piyamTravelLogoBase64 } from '../../data';
-
-const PiyamTravelLogo = () => <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo" className="h-auto max-w-full" />;
+import PortalLogo from './PortalLogo';
 
 export default function PackageHeader({ customer, onLogout }) {
   const packageDescription = customer.packageType && customer.destination
@@ -11,8 +9,8 @@ export default function PackageHeader({ customer, onLogout }) {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4 border-b border-gray-200 dark:border-gray-700 pb-6">
       <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
-        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-red-100 bg-red-50 dark:border-red-900 dark:bg-white">
-          <PiyamTravelLogo />
+        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-red-100 bg-red-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+          <PortalLogo />
         </div>
         <div className="min-w-0">
           <p className="break-all font-mono text-sm text-gray-500">Reference: {customer.reference}</p>

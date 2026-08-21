@@ -1,6 +1,7 @@
 const ACCESS_ENDPOINT = '/api/package-access';
 const DATA_ENDPOINT = '/api/package-data';
 const SESSION_ENDPOINT = '/api/package-session';
+const EXTENSION_ENDPOINT = '/api/package-extension-request';
 
 const DEFAULT_ACCESS_ERROR = 'Package details do not match. Check the lead passenger surname and reference.';
 const DEFAULT_DATA_ERROR = 'Package documents are not currently available. Contact your agent.';
@@ -127,6 +128,33 @@ export function loadPackageData(token = null, { signal } = {}) {
     headers,
     signal
   }, DEFAULT_DATA_ERROR);
+}
+
+/**
+ * Ask IMS staff to review document-portal access. A logged-in customer uses the
+ * current cookie/bearer credential; an expired login may supply reference and surname.
+ */
+export function requestPackageAccessExtension({
+  token = null,
+  reference = null,
+  lastName = null,
+  signal,
+  endpoint = EXTENSION_ENDPOINT
+} = {}) {
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
+  };
+  const credential = typeof token === 'string' ? token.trim() : '';
+  if (credential) headers.Authorization = `Bearer ${credential}`;
+
+  const body = credential ? {} : { reference, lastName };
+  return requestJson(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+    signal
+  }, 'We could not send the extension request right now. Please try again shortly.');
 }
 
 /**

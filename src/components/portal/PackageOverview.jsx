@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatPortalDate } from '../../utils/packagePortal';
+import PackageAccessExtensionRequest from './PackageAccessExtensionRequest';
 import PackageSupportContacts from './PackageSupportContacts';
 import PackageTransportVoucher from './PackageTransportVoucher';
 
@@ -36,7 +37,7 @@ function getExpiryNotice(value, now = Date.now()) {
   return null;
 }
 
-export default function PackageOverview({ customer, onOpenDocuments }) {
+export default function PackageOverview({ customer, onOpenDocuments, onRequestAccessExtension }) {
   const publicSummary = customer?.publicSummary && typeof customer.publicSummary === 'object'
     ? Object.entries(customer.publicSummary).filter(([key, value]) =>
       !isFinancialPublicInfoKey(key) && ['string', 'number', 'boolean'].includes(typeof value)
@@ -84,6 +85,8 @@ export default function PackageOverview({ customer, onOpenDocuments }) {
           {expiryNotice}
         </div>
       )}
+
+      <PackageAccessExtensionRequest onRequest={onRequestAccessExtension} />
 
       <PackageSupportContacts
         customerEmail={keyInformation.customerEmail}

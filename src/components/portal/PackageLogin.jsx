@@ -1,12 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { UserIcon } from '../Icons';
-import { PackagePortalApiError, resolvePackageAccess, loadPackageData } from '../../services/packagePortalApi';
+import {
+  loadPackageData,
+  PackagePortalApiError,
+  requestPackageAccessExtension,
+  resolvePackageAccess
+} from '../../services/packagePortalApi';
 import { normalizePtPortalPackage } from '../../adapters/ptPortalPackageAdapter';
 import { normalizeLegacyPackage } from '../../adapters/legacyPackageAdapter';
-import { piyamTravelLogoBase64 } from '../../data';
 import { getPackageErrorMessage } from '../../services/packageErrorResolver';
+import PackageAccessExtensionRequest from './PackageAccessExtensionRequest';
+import PortalLogo from './PortalLogo';
 
-const PiyamTravelLogo = () => <img src={piyamTravelLogoBase64} alt="Piyam Travel Logo" className="h-auto max-w-full" />;
 
 export function normalizeReferenceInput(value) {
   const normalized = String(value || '').trim().toUpperCase();
@@ -19,13 +24,14 @@ export function normalizeReferenceInput(value) {
  * For the existing shell, `onLogin(package, metadata)` receives equivalent data.
  * The bearer credential is never attached to the normalized package object.
  */
-export default function PackageLogin({ onAuthenticated, onLogin }) {
+export default function PackageLogin({ onAuthenticated, onLogin, theme = 'light', onToggleTheme }) {
   const [refNumber, setRefNumber] = useState('');
   const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [retryUntil, setRetryUntil] = useState(0);
   const [retrySeconds, setRetrySeconds] = useState(0);
+  const [canRequestExtension, setCanRequestExtension] = useState(false);
   const requestControllerRef = useRef(null);
 
   useEffect(() => () => requestControllerRef.current?.abort(), []);
@@ -80,6 +86,7 @@ export default function PackageLogin({ onAuthenticated, onLogin }) {
     }
 
     setError('');
+    setCanRequestExtension(false);
     setIsSubmitting(true);
     requestControllerRef.current?.abort();
     const controller = new AbortController();
@@ -132,6 +139,7 @@ export default function PackageLogin({ onAuthenticated, onLogin }) {
       if (requestError?.name === 'AbortError') return;
 
       setError(getPackageErrorMessage(requestError, 'access'));
+      setCanRequestExtension(Number(requestError?.status) === 410);
       if (Number(requestError?.status) === 429) {
         const waitSeconds = Number.isFinite(Number(requestError.retryAfter)) && Number(requestError.retryAfter) > 0
           ? Math.min(3600, Math.ceil(Number(requestError.retryAfter)))
@@ -150,9 +158,21 @@ export default function PackageLogin({ onAuthenticated, onLogin }) {
   const describedBy = [errorId, retryId].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 border-t-4 border-t-red-800 bg-white shadow-xl dark:border-slate-800 dark:border-t-red-700 dark:bg-slate-900 dark:shadow-black/30">
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 border-t-4 border-t-red-800 bg-white shadow-xl dark:border-slate-700 dark:border-t-red-600 dark:bg-slate-900 dark:shadow-black/30">
+      {typeof onToggleTheme === 'function' && (
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          className="absolute right-3 top-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          aria-pressed={theme === 'dark'}
+        >
+          <span aria-hidden="true">{theme === 'light' ? '🌙' : '☀️'}</span>
+          <span>{theme === 'light' ? 'Dark' : 'Light'}</span>
+        </button>
+      )}
       <div className="p-5 sm:p-8">
-        <div className="mb-6 flex justify-center"><PiyamTravelLogo /></div>
+        <div className="mb-6 flex justify-center px-16 sm:px-20"><PortalLogo className="max-h-24" /></div>
         <h1 className="mb-2 text-center text-2xl font-bold text-gray-800 dark:text-gray-200">Client Document Portal</h1>
         <p className="mb-8 text-center text-gray-500 dark:text-slate-400">Access your travel documents securely.</p>
 
@@ -165,10 +185,14 @@ export default function PackageLogin({ onAuthenticated, onLogin }) {
                 type="text"
                 id="refNumber"
                 value={refNumber}
-                onChange={event => setRefNumber(normalizeReferenceInput(event.target.value))}
+                onChange={event => {
+                  setRefNumber(normalizeReferenceInput(event.target.value));
+                  setCanRequestExtension(false);
+                }}
                 onPaste={event => {
                   event.preventDefault();
                   setRefNumber(normalizeReferenceInput(event.clipboardData.getData('text')));
+                  setCanRequestExtension(false);
                 }}
                 placeholder="H29GPX"
                 className="block min-h-11 min-w-0 flex-1 rounded-none rounded-r-lg border border-gray-300 p-2 uppercase focus:border-red-500 focus:ring-red-500 dark:border-gray-600 dark:bg-gray-900"
@@ -193,7 +217,10 @@ export default function PackageLogin({ onAuthenticated, onLogin }) {
                 type="text"
                 id="lastName"
                 value={lastName}
-                onChange={event => setLastName(event.target.value)}
+                onChange={event => {
+                  setLastName(event.target.value);
+                  setCanRequestExtension(false);
+                }}
                 placeholder="Lead passenger surname"
                 className="min-h-11 w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-red-800 focus:ring-red-800 dark:border-gray-600 dark:bg-gray-900"
                 autoComplete="family-name"
@@ -222,6 +249,16 @@ export default function PackageLogin({ onAuthenticated, onLogin }) {
             {isSubmitting ? 'Opening your package…' : retrySeconds > 0 ? `Try again in ${retrySeconds}s` : 'Access Documents'}
           </button>
         </form>
+
+        {canRequestExtension && (
+          <PackageAccessExtensionRequest
+            className="mt-6"
+            onRequest={() => requestPackageAccessExtension({
+              reference: normalizeReferenceInput(refNumber),
+              lastName: lastName.trim()
+            })}
+          />
+        )}
       </div>
     </div>
   );

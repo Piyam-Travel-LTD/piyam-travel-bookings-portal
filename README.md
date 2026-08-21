@@ -2,7 +2,7 @@
 
 The customer-facing portal at bookings.piyamtravel.com provides access to travel-package documents while the business moves from legacy Firebase folders to PT-Portal packages.
 
-New packages are owned and managed in PT-Portal. This repository remains responsible for the customer interface, same-origin serverless adapters, and temporary read access to legacy Firebase and Cloudflare R2 records. The <code>/agent</code> route is a legacy migration tool and must not become a second source of truth for new PT packages.
+New packages are owned and managed in PT-Portal. This repository remains responsible for the customer interface, same-origin serverless adapters, and temporary read access to legacy Firebase and Cloudflare R2 records. The legacy <code>/agent</code> route is disabled; staff manage packages in IMS.
 
 ## Application routes
 
@@ -11,7 +11,7 @@ New packages are owned and managed in PT-Portal. This repository remains respons
 - <code>/documents</code> is the token-free URL used after a secure package session is established.
 - <code>/agent</code> provides the temporary Firebase agent dashboard for legacy folders.
 
-The browser calls only same-origin <code>/api</code> endpoints. Serverless functions contact PT-Portal, Firebase Admin, Cloudflare R2, and Mailgun with server-only credentials.
+The browser calls only same-origin <code>/api</code> endpoints. Serverless functions contact PT-Portal, Firebase Admin, Cloudflare R2, and Mailgun with server-only credentials. Customer access-extension requests are verified and persisted by PT-Portal as deduplicated staff tasks and audit events; they never extend access automatically.
 
 ## Requirements
 
